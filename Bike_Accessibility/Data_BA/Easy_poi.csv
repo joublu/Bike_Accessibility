@@ -1,0 +1,4 @@
+@id;@lon;@lat;id_node;distance_node;bBox;name;alt_name;short_name;name:fr;local_name;official_name;old_name;amenity;landuse;leisure;office;school:FR;shop
+25210307;0.7169000;47.3967000;3;0.0006872614640724737;;Relais Du Rochin;;;;;;;fuel;;;;;convenience
+25210772;0.7768262;47.4758609;7;0.005523037014178873;;Relais BP De Meslay;;;;;;;fuel;;;;;convenience
+257816658;0.7085959;47.4287137;1;0.00017028752156236947;;Biocoop;;;;;;;;;;;;supermarket

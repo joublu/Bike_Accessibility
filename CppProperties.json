@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "name": "x86-Debug",
+        "includePath": [
+            "${env.INCLUDE}",
+            "C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio_Community2212\\concert\\include\\**",
+            "C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio_Community2212\\cplex\\include\\**",
+            "${workspaceRoot}\\**"
+        ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x86"
+    }
+  ]
+}
