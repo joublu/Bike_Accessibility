@@ -9,15 +9,15 @@ private:
 	long int edge_id;
 	long int node_id_1;
 	long int node_id_2;
-	double edge_cost_1;
-	double edge_cost_2;
+	double edge_cost_1; // distance (c_ij^1)
+	double edge_cost_2; // danger (sert pr clc LTS)
 	double LTS;
 	double edge_cost_after_1;
 	double edge_cost_after_2;
 public:
 	Edge(long int _id, long int _id_1, long int _id_2, double _cost_1, double _cost_2, double _cost_a_1=0, double _cost_a_2=0) : edge_id(_id), node_id_1(_id_1), node_id_2(_id_2), edge_cost_1(_cost_1), edge_cost_2(_cost_2) , edge_cost_after_1(_cost_a_1), edge_cost_after_2(_cost_a_2){
 		
-		//Calcule du LTS > vérification si un pb dans le fichier avce un arc à 0 de distance
+		//Calcule du LTS > vï¿½rification si un pb dans le fichier avce un arc ï¿½ 0 de distance
 		if (edge_cost_1 != 0) LTS = edge_cost_2 / edge_cost_1;
 		else LTS = std::numeric_limits<double>::infinity();
 		//std::cout << "edge lts = " << LTS << std::endl;

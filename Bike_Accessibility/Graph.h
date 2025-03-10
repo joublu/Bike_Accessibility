@@ -69,6 +69,7 @@ public:
 	//initialize reachable edge
 	void compute_reachable_edges(Tile* currTile, float dist);
 	void compute_reachable_edges_v2(Tile* currTile, float dist_limit);
+	void compute_reachable_edges_v3(Tile* currTile, float dist_limit);
 	void initialize_tiles_visibility_set(Tiles* carreaux, float dist);
 };
 

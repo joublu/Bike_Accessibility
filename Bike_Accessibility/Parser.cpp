@@ -74,10 +74,10 @@ Graph* Parser::parse_nodes_and_edges_file(std::string pathNode, std::string path
         nodeJ = atol(value.c_str());
 
         getline(ss, value, sep);
-        costVariante[0] = atof(value.c_str());
+        costVariante[0] = atof(value.c_str()); //distance
             
         getline(ss, value, sep);
-        costVariante[1] = atof(value.c_str());
+        costVariante[1] = atof(value.c_str()); // danger
         
 
         /*
@@ -158,6 +158,7 @@ Tiles* Parser::parse_filsofi_file(std::string path_filosofi, char sep)
     return zones;
 }
 
+// on modifie le graphe et les carreaux dans cette fonction
 void Parser::parse_POI_file(std::string path_poi, char sep, Tiles* carreaux, Graph* graph)
 {
     // File variables
@@ -188,7 +189,7 @@ void Parser::parse_POI_file(std::string path_poi, char sep, Tiles* carreaux, Gra
         carreaux->getListOfPoi().push_back(new POI(idPoi, poi_node));
         
         //Ajouter le POI dans la liste du noeud auquel il est rattaché
-        graph->getListOfNodes()[poi_node].addPoi(carreaux->getListOfPoi().back());
+        graph->getListOfNodes()[poi_node].addPoi(carreaux->getListOfPoi().back()); // carreaux->getListOfPoi().back() est le dernier POI créé
         idPoi++;
 
     }

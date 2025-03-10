@@ -16,12 +16,12 @@ private:
 	long int tile_population;
 	vector<Node*> tile_node_visibility;
 	vector <Edge*> tile_edge_visibility;
-	vector <POI*> tile_potential_poi;
+	vector <POI*> tile_potential_poi; // voir c'est quoi
 public:
 	Tile(long int _id, long int _id_node, long int _tile_population): id_tile(_id), id_central_node(_id_node), tile_population(_tile_population) {};
 
 	//getters
-	vector<Node*>& getNodeVisibility() { return tile_node_visibility; };
+	vector<Node*>& getNodeVisibility() { return tile_node_visibility; }; // voir ce que signifie la ref & exactement
 	vector<Edge*>& getEdgeVisibility() { return tile_edge_visibility; };
 	vector<POI*>& getPotentialPoi() { return tile_potential_poi; };
 

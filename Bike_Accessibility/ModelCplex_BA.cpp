@@ -33,13 +33,13 @@ ModelCplex_BA::ModelCplex_BA(Graph* _g, Tiles* _t, float _b, double _ltsmax, flo
 	cout << "\t- Creation de l'environnement" << endl;
 	env = IloEnv();
 
-	cout << "\t- Creation du modèle" << endl;
+	cout << "\t- Creation du modï¿½le" << endl;
 	model = IloModel(env);
 
     cout << "\t- Creation des maps" << endl;
     long int var_idx = 0, couple_var_idx = 0;    
     map_size = carreaux->getsizeVarTab();
-    couple_map_size = carreaux->getsizeCoupleVarTab();
+    couple_map_size = carreaux->getsizeCoupleVarTab(); // voir si pareil que "NUMBER OF PPOI AND ZONES COUPLE"
     cout << "\t map_size = " << map_size << "  et couple_map_size = " << couple_map_size <<  endl;
 
     idx_mapping.reserve(map_size);
@@ -53,6 +53,7 @@ ModelCplex_BA::ModelCplex_BA(Graph* _g, Tiles* _t, float _b, double _ltsmax, flo
         int nb_ppoi = carreaux->getListeOfTiles()[z]->getPotentialPoi().size();
         if (nb_ppoi > max_ppoi) max_ppoi = nb_ppoi;
 
+        // getEdgeVisibility est initialisÃ© dans Graph::compute_reachable_edges_v2
         int nb_visible_edges = carreaux->getListeOfTiles()[z]->getEdgeVisibility().size();
         for (int p = 0; p < nb_ppoi; p++)
         {
@@ -121,6 +122,8 @@ ModelCplex_BA::~ModelCplex_BA() {
 
 void ModelCplex_BA::generate_variables_model_v2()
 {
+    // y_ij_z^p, yb_ij_z^p et delta_ij_z^p : les 3 dÃ©pendent d'un triplet edge, tile, poi trouvÃ© ds idx_mapping
+    // 3 tableaux de longueur map_size=lenght(idx_mapping) sont crÃ©Ã©es pr stocker ces var
 
     Delta_var = IloNumVarArray(env, map_size);
     Y_var = IloNumVarArray(env, map_size);
@@ -170,6 +173,7 @@ void ModelCplex_BA::generate_variables_model_v2()
         
         std::stringstream name;
         name << "D_z_" << z << "_p_" << p;
+        // IloNumVar(const IloEnv env, IloNum lb=0, IloNum ub=IloInfinity, IloNumVar::Type type=Float, const char * name=0)
         D_var[it->second] = IloNumVar(env, 0,IloInfinity, IloNumVar::Float, name.str().c_str());
 
         std::stringstream name2;
@@ -213,16 +217,16 @@ void ModelCplex_BA::generate_variables_model()
 void ModelCplex_BA::generate_constraints()
 {
     // C_12 : budget max
-    // C_4 et C_5
+    // C_4 et C_5 : SB_var >= YB_var et 1 - SB_var >= Y
     cout << "\t\t- building C4, C5 and C12 " << endl;
     for (size_t e = 0; e < nbEdges; e++)
     {
-        // récupérer le edge à partir de son id : id == position dans le vecteur des edges du graph
+        // rï¿½cupï¿½rer le edge ï¿½ partir de son id : id == position dans le vecteur des edges du graph
         Edge* edge_ptr = graph->getGivenEdge(e);
         budgetExpr += SB_var[e] * edge_ptr->get_edge_cost_1();
        // cout << " ++++++++++ edge " << edge_ptr->get_node_id_1() << " to " << edge_ptr->get_node_id_2() << endl;
 
-        // Récupérer tous les Y qui contiennent l'edge
+        // Rï¿½cupï¿½rer tous les Y qui contiennent l'edge
         for (int z = 0; z < carreaux->getNbTiles(); z++)
         {
             Tile* tile_ptr = carreaux->getListeOfTiles()[z];
@@ -240,7 +244,7 @@ void ModelCplex_BA::generate_constraints()
                // cout << " C4 C5 e_" << edge_ptr->get_node_id_1() << "_" << edge_ptr->get_node_id_2() << "_z_" << tile_ptr->getIdcentralNode() << "_p_" << poi_ptr->getPoiNode() << endl;
 
                 std::unordered_map<key_type, size_t>::const_iterator got = idx_mapping.find(k);
-                if (got != idx_mapping.end())
+                if (got != idx_mapping.end()) // par def de find
                 {
                    // cout << "FOUND  Edge " << got->first.edge->get_node_id_1() << " to "<<  got->first.edge->get_node_id_2() << " tile " << got->first.tile->getIdcentralNode() << " poi " << got->first.poi->getPoiNode() << endl;
                    // cout << " Cst NAME tile "<< tile_ptr->getIdcentralNode() << "_p_" << poi_ptr->getPoiNode()<< endl;
@@ -302,13 +306,13 @@ void ModelCplex_BA::generate_constraints()
         Tile* tile_ptr = carreaux->getListeOfTiles()[z];
 
         long int node_delegue = carreaux->getListeOfTiles()[z]->getIdcentralNode();
-        // récupérer les successeur du noeud central
+        // rï¿½cupï¿½rer les successeur du noeud central
         std::vector<Edge*>& succ_edge_of_nz = graph->getEdgeSucc(node_delegue);
         std::vector<Edge*> keep_succ_edges;
 
 
-        // Vérifier que les edge retournés sont dans la visibilité de z car ce sont les successeurs à l'echelle du graphe
-        // ne garder que les succ dans la visibilité dans keep_edges
+        // Vï¿½rifier que les edge retournï¿½s sont dans la visibilitï¿½ de z car ce sont les successeurs ï¿½ l'echelle du graphe
+        // ne garder que les succ dans la visibilitï¿½ dans keep_edges
         for (auto it = succ_edge_of_nz.begin(); it != succ_edge_of_nz.end(); it++)
         {
             if (find(carreaux->getListeOfTiles()[z]->getEdgeVisibility().begin(),
@@ -330,7 +334,7 @@ void ModelCplex_BA::generate_constraints()
             POI* poi_ptr = carreaux->getListeOfTiles()[z]->getPotentialPoi()[p];
             long int node_poi_np = poi_ptr->getPoiNode();
            
-                // récupérer les predecesseurs du noeud du poi
+                // rï¿½cupï¿½rer les predecesseurs du noeud du poi
                 std::vector<Edge*>& pred_edge_of_np = graph->getEdgePred(node_poi_np);
                 //cout << "the list of predessors"
                 std::vector<Edge*> keep_pred_edges;
@@ -339,7 +343,7 @@ void ModelCplex_BA::generate_constraints()
                 //cout << " Noeud delegue = " << node_delegue << " et poi = " << node_poi_np << " dont les predecesseurs du poi sont " << endl;
 
 
-                // verfier que les edges retournés sont la visibilite de z
+                // verfier que les edges retournï¿½s sont la visibilite de z
                 for (auto it = pred_edge_of_np.begin(); it != pred_edge_of_np.end(); it++)
                 {
                     //cout << "(" << (*it)->get_node_id_1() << "_" << (*it)->get_node_id_2() << ")";
@@ -448,7 +452,7 @@ void ModelCplex_BA::generate_constraints()
             for (auto it = carreaux->getListeOfTiles()[z]->getNodeVisibility().begin(); it != carreaux->getListeOfTiles()[z]->getNodeVisibility().end(); it++)
             {
                 bool is_nz_or_np = false;
-                // On ne considere pas les nz ni les np
+                // On ne considere pas les nz ni les np (noeuds delegues et poi)
                 if ((*it)->getId() == node_delegue)  is_nz_or_np = true;
 
                 long int curentNodej = (*it)->getId();
@@ -464,15 +468,15 @@ void ModelCplex_BA::generate_constraints()
                 }
                 //if (!is_nz_or_np)
                 {
-                     // récupérer les succ et pred et ne garder que les edges qui sont dans la visibilité
-                    // récupérer les predecesseurs du noeud du poi
+                     // rï¿½cupï¿½rer les succ et pred et ne garder que les edges qui sont dans la visibilitï¿½
+                    // rï¿½cupï¿½rer les predecesseurs du noeud du poi
                     std::vector<Edge*>& pred_edge_of_j = graph->getEdgePred((*it)->getId());
                     std::vector<Edge*> keep_pred_edges;
 
                     std::vector<Edge*>& succ_edge_of_j = graph->getEdgeSucc((*it)->getId());
                     std::vector<Edge*> keep_succ_edges;
 
-                    // verfier que les edges retournés sont la visibilite de z
+                    // verfier que les edges retournï¿½s sont la visibilite de z
                     for (auto itpred = pred_edge_of_j.begin(); itpred != pred_edge_of_j.end(); itpred++)
                     {
                         if (find(carreaux->getListeOfTiles()[z]->getEdgeVisibility().begin(),
@@ -484,6 +488,7 @@ void ModelCplex_BA::generate_constraints()
 
                     for (auto itsucc = succ_edge_of_j.begin(); itsucc != succ_edge_of_j.end(); itsucc++)
                     {
+                        // find is find first matching *itsucc
                         if (find(carreaux->getListeOfTiles()[z]->getEdgeVisibility().begin(),
                             carreaux->getListeOfTiles()[z]->getEdgeVisibility().end(), *itsucc) != carreaux->getListeOfTiles()[z]->getEdgeVisibility().end())
                         {
@@ -588,7 +593,7 @@ void ModelCplex_BA::generate_constraints()
     
     cout << "\t\t- building C13" << endl;
     c13Constraints = IloConstraintArray(env);
-    // Récupérer tous les Y qui contiennent l'edge
+    // Rï¿½cupï¿½rer tous les Y qui contiennent l'edge
     for (int z = 0; z < carreaux->getNbTiles(); z++)
     {
         Tile* tile_ptr = carreaux->getListeOfTiles()[z];
@@ -615,16 +620,16 @@ void ModelCplex_BA::generate_constraints()
                 k.edge = edge_ptr;
                 size_t Y_YB_var_position = idx_mapping[k];  
 
-                // Differencier les arcs que l'on peut amménager !!!! >> faire depndre les couts ?                
+                // Differencier les arcs que l'on peut ammï¿½nager !!!! >> faire depndre les couts ?                
                 float cost1_after_improvement = edge_ptr->get_edge_cost_1();
-                // Le cout avant aménagement est mis très grand pour tous les arcs
+                // Le cout avant amï¿½nagement est mis trï¿½s grand pour tous les arcs
                 float cost1 = distance_max + 1;//  cost1_after_improvement * 2;
-                // Si l'arc a un LTS inf ou egal a celui visé, le cout avant et apres est le même, c'est la distance
+                // Si l'arc a un LTS inf ou egal a celui visï¿½, le cout avant et apres est le mï¿½me, c'est la distance
                 if (edge_ptr->get_edge_LTS() <= LTS_max)
                 {
                     cost1 = edge_ptr->get_edge_cost_1(); 
 
-                    //            // Si l'arc est aménagé, mettre les YB à zero ?????
+                    //            // Si l'arc est amï¿½nagï¿½, mettre les YB ï¿½ zero ?????
                     //cout << " edge" << edge_ptr->get_node_id_1() << " - " << edge_ptr->get_node_id_2()  <<" is already improved " << endl;
                     //model.add(YB_var[Y_YB_var_position] == 0);
                     c13Constraints.add(YB_var[Y_YB_var_position] == 0);
@@ -688,7 +693,7 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
          cplex.setParam(IloCplex::Param::Preprocessing::Presolve, false);
 
      //feasibleSolutionTime = -1;
-     // Utilisation d'un InfoCallBack pour rechercher le temps de pour trouver une solution faisable, la solution optimalee et le temps pour prouver l'optimalité
+     // Utilisation d'un InfoCallBack pour rechercher le temps de pour trouver une solution faisable, la solution optimalee et le temps pour prouver l'optimalitï¿½
     // cplex.use(GetTimeEtapeResolution(env, &bestObjectiveValue, &feasibleSolutionTime, &optimumSolutionTime));
 
     cout << "begin to solve" << endl;
@@ -699,7 +704,7 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
     bool res = cplex.solve();
     double stopTime = cplex.getCplexTime();
     resolutionTime = stopTime - startTime;
-    cout << "Temps de résolution: " << resolutionTime << endl;
+    cout << "Temps de rï¿½solution: " << resolutionTime << endl;
 
     if (res) {
         env.out() << "Solution value  = " << cplex.getObjValue() << endl;
@@ -713,14 +718,14 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
         }
 
         std::ofstream GLOBALResFile;
-        GLOBALResFile.open("./Results/global.csv", ios::app);
-        if (!GLOBALResFile.is_open())
-        {
-            std::cout << "error opening GLOBALResFile" << endl;
-            return;
-        }
-        GLOBALResFile << graph->getGraphName() << ";" << carreaux->getNbTiles() << ";" << carreaux->getNbPoi() << ";" << carreaux->getNbPpoiTileCouple() << ";";
-        GLOBALResFile << budget << ";" << LTS_max << ";" << distance_max << ";" << modelBuildingTime << ";" << resolutionTime << ";" << cplex.getObjValue() << ";";
+        GLOBALResFile.open("./Results/global.csv", ios::app); // revoir nom pr qu'il soit unique etc (sinn Ã§a pose des erreurs Ã  l'execution)
+        // if (!GLOBALResFile.is_open())
+        // {
+        //     std::cout << "error opening GLOBALResFile" << endl;
+        //     return;
+        // }
+        // GLOBALResFile << graph->getGraphName() << ";" << carreaux->getNbTiles() << ";" << carreaux->getNbPoi() << ";" << carreaux->getNbPpoiTileCouple() << ";";
+        // GLOBALResFile << budget << ";" << LTS_max << ";" << distance_max << ";" << modelBuildingTime << ";" << resolutionTime << ";" << cplex.getObjValue() << ";";
 
         resFile << "graph_name" << ";" << graph->getGraphName() << endl;
         resFile << "nbTiles" << ";" << carreaux->getNbTiles() << endl;
@@ -776,8 +781,8 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
             }
             e++;
         }
-        GLOBALResFile << cpt_arcs_amenages << ";" << endl;
-        cout << "finished : cpt_arcs_amenages =  " << cpt_arcs_amenages << endl;
+        // GLOBALResFile << cpt_arcs_amenages << ";" << endl;
+        // cout << "finished : cpt_arcs_amenages =  " << cpt_arcs_amenages << endl;
     }
     else
     {
@@ -818,7 +823,7 @@ void ModelCplex_BA::changeC13Constraints(double newLTSmax)
 
     cout << "\t\t- building C13" << endl;
     c13Constraints = IloConstraintArray(env);
-    // Récupérer tous les Y qui contiennent l'edge
+    // Rï¿½cupï¿½rer tous les Y qui contiennent l'edge
     for (int z = 0; z < carreaux->getNbTiles(); z++)
     {
         Tile* tile_ptr = carreaux->getListeOfTiles()[z];
@@ -845,16 +850,16 @@ void ModelCplex_BA::changeC13Constraints(double newLTSmax)
                 k.edge = edge_ptr;
                 size_t Y_YB_var_position = idx_mapping[k];
 
-                // Differencier les arcs que l'on peut amménager !!!! >> faire depndre les couts ?                
+                // Differencier les arcs que l'on peut ammï¿½nager !!!! >> faire depndre les couts ?                
                 float cost1_after_improvement = edge_ptr->get_edge_cost_1();
-                // Le cout avant aménagement est mis très grand pour tous les arcs
+                // Le cout avant amï¿½nagement est mis trï¿½s grand pour tous les arcs
                 float cost1 = distance_max + 1;//  cost1_after_improvement * 2;
-                // Si l'arc a un LTS inf ou egal a celui visé, le cout avant et apres est le même, c'est la distance
+                // Si l'arc a un LTS inf ou egal a celui visï¿½, le cout avant et apres est le mï¿½me, c'est la distance
                 if (edge_ptr->get_edge_LTS() <= LTS_max)
                 {
                     cost1 = edge_ptr->get_edge_cost_1();
 
-                    //            // Si l'arc est aménagé, mettre les YB à zero ?????
+                    //            // Si l'arc est amï¿½nagï¿½, mettre les YB ï¿½ zero ?????
                     //cout << " edge" << edge_ptr->get_node_id_1() << " - " << edge_ptr->get_node_id_2()  <<" is already improved " << endl;
                     //model.add(YB_var[Y_YB_var_position] == 0);
                     c13Constraints.add(YB_var[Y_YB_var_position] == 0);

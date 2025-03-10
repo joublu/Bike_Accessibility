@@ -21,21 +21,22 @@ Edge* Graph::getGivenEdge(long int i, long int j){
 	return nullptr;
 }
 
-// Suppose que les edge sont rangés dans l'ordre de leur id, id == position dans le vecteur >> pour gagner du temps et ne pas parcourir le vecteur
+// Suppose que les edge sont rangï¿½s dans l'ordre de leur id, id == position dans le vecteur >> pour gagner du temps et ne pas parcourir le vecteur
 Edge* Graph::getGivenEdge(long int id)
 {
 	return &(list_of_edges[id]);
 }
 
+// pas utilisÃ©
 void Graph::compute_reachable_edges(Tile* currTile, float dist_limit)
 {
 	//cout << "enter get reachable " << endl;
 	reset_nodes();
 
-	// Stack des noeuds à explorer
+	// Stack des noeuds ï¿½ explorer
 	std::vector<Node*> nodes_stack;
 
-	// Noeud de départ du Dijkstra
+	// Noeud de dï¿½part du Dijkstra
 	long int current_node_id = currTile->getIdcentralNode();
 	Node* current_node_ptr = getPtrNode(current_node_id);
 	current_node_ptr->setIsVisisted(true);
@@ -47,7 +48,7 @@ void Graph::compute_reachable_edges(Tile* currTile, float dist_limit)
 
 	do {
 
-		// Retirer le neoud de queue (le vecteur est trié par distance décroissante)
+		// Retirer le neoud de queue (le vecteur est triï¿½ par distance dï¿½croissante)
 		current_node_ptr = nodes_stack.back();
 		curr_dist = current_node_ptr->getDist();
 		current_node_id = current_node_ptr->getId();
@@ -62,12 +63,12 @@ void Graph::compute_reachable_edges(Tile* currTile, float dist_limit)
 			Edge* curr_edge = this->getGivenEdge(current_node_id, tmp_ptr_node->getId() );
 			//cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
-			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
+			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'ï¿½tait pas dï¿½jï¿½ atteint avec une plus petite distance
 			if ( (curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) &&	(curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
 			{
-				// Mise à jour du nouveau label distance pour ce voisi
+				// Mise ï¿½ jour du nouveau label distance pour ce voisi
 				tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
-				//Ajout du voisin dans la liste à explorer si pas deja present
+				//Ajout du voisin dans la liste ï¿½ explorer si pas deja present
 				if (tmp_ptr_node->getIsVisited() == false)
 				{
 					tmp_ptr_node->setIsVisisted(true);
@@ -79,7 +80,7 @@ void Graph::compute_reachable_edges(Tile* currTile, float dist_limit)
 			}
 		}
 
-		// Trier le vecteur par ordre décrosisant des distance
+		// Trier le vecteur par ordre dï¿½crosisant des distance
 		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
 
 		// Affichage de la liste
@@ -89,21 +90,21 @@ void Graph::compute_reachable_edges(Tile* currTile, float dist_limit)
 		cout << "  ---- " << endl;*/
 	} while (nodes_stack.size() > 0);
 	
-	// TODO: insérer une instruction return ici
+	// TODO: insï¿½rer une instruction return ici
 
 }
 
-
+// sert a clc la visibilitÃ©, Ã  revoir
 void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 {
 	//cout << "enter get reachable " << endl;
-	//reset_nodes();
+	//reset_nodes(); // le constructeur met deja la distance Ã  infinity et
 
-	// Stack des noeuds à explorer
+	// Stack des noeuds ï¿½ explorer
 	std::vector<Node*> nodes_stack;
 	std::vector<Node*> nodes_stack_to_reset;
 
-	// Noeud de départ du Dijkstra
+	// Noeud de dï¿½part du Dijkstra
 	long int current_node_id = currTile->getIdcentralNode();
 	Node* current_node_ptr = getPtrNode(current_node_id);
 	current_node_ptr->setIsVisisted(true);
@@ -115,14 +116,16 @@ void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 	nodes_stack_to_reset.push_back(current_node_ptr);
 
 	do {
-		// Retirer le neoud de queue (le vecteur est trié par distance décroissante)
-		current_node_ptr = nodes_stack.back();
-		curr_dist = current_node_ptr->getDist();
+		// Retirer le neoud de queue (le vecteur est triï¿½ par distance dï¿½croissante)
+		current_node_ptr = nodes_stack.back(); // 1ere iteration c'est le noeud ligne 109
+		curr_dist = current_node_ptr->getDist(); // 1ere iteration c'est 0
 		current_node_id = current_node_ptr->getId();
-		nodes_stack.pop_back();
+		nodes_stack.pop_back(); // destroys the elem
 		//cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
 
-		currTile->getNodeVisibility().push_back(current_node_ptr);
+		// on ajoute le noeud Ã  ceux visibles (pcq ds nodes_stack, d'ou vient current_node_ptr,
+		// on ajd seulement des noeuds visibles (cf l140))
+		currTile->getNodeVisibility().push_back(current_node_ptr); 
 
 		//Parcourir les successseurs du noeud courant via la liste des edges
 		int nb_succ_edges = edges_successors[current_node_id].size();
@@ -133,12 +136,12 @@ void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 			Node* tmp_ptr_node = getPtrNode(curr_edge->get_node_id_2());
 			//cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
-			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
+			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'ï¿½tait pas dï¿½jï¿½ atteint avec une plus petite distance
 			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
 			{
-				// Mise à jour du nouveau label distance pour ce voisi
+				// Mise ï¿½ jour du nouveau label distance pour ce voisi
 				tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
-				//Ajout du voisin dans la liste à explorer si pas deja present
+				//Ajout du voisin dans la liste ï¿½ explorer si pas deja present
 				if (tmp_ptr_node->getIsVisited() == false)
 				{
 					tmp_ptr_node->setIsVisisted(true);
@@ -152,7 +155,7 @@ void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 			}
 		}
 
-		// Trier le vecteur par ordre décrosisant des distance
+		// Trier le vecteur par ordre dï¿½crosisant des distance
 		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
 
 		// Affichage de la liste
@@ -162,7 +165,83 @@ void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 		cout << "  ---- " << endl;*/
 	} while (nodes_stack.size() > 0);
 
-	// TODO: insérer une instruction return ici
+	// TODO: insï¿½rer une instruction return ici
+	// reset nodes
+	reset_list_of_nodes(nodes_stack_to_reset);
+}
+
+// nouveau
+void Graph::compute_reachable_edges_v3(Tile* currTile, float dist_limit)
+{
+	//cout << "enter get reachable " << endl;
+	//reset_nodes(); // le constructeur met deja la distance Ã  infinity et
+
+	// Stack des noeuds ï¿½ explorer
+	std::vector<Node*> nodes_stack;
+	std::vector<Node*> nodes_stack_to_reset;
+
+	// Noeud de dï¿½part du Dijkstra
+	long int current_node_id = currTile->getIdcentralNode();
+	Node* current_node_ptr = getPtrNode(current_node_id);
+	current_node_ptr->setIsVisisted(true);
+	current_node_ptr->setDistance(0);
+	double curr_dist = 0;
+
+	// Ajout du noeud de depart dans la stack
+	nodes_stack.push_back(current_node_ptr);
+	nodes_stack_to_reset.push_back(current_node_ptr);
+
+	do {
+		// Retirer le neoud de queue (le vecteur est triï¿½ par distance dï¿½croissante)
+		current_node_ptr = nodes_stack.back(); // 1ere iteration c'est le noeud ligne 109
+		curr_dist = current_node_ptr->getDist(); // 1ere iteration c'est 0
+		current_node_id = current_node_ptr->getId();
+		nodes_stack.pop_back(); // destroys the elem
+		//cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
+
+		// on ajoute le noeud Ã  ceux visibles (pcq ds nodes_stack, d'ou vient current_node_ptr,
+		// on ajd seulement des noeuds visibles (cf l140))
+		currTile->getNodeVisibility().push_back(current_node_ptr); 
+
+		//Parcourir les successseurs du noeud courant via la liste des edges
+		int nb_succ_edges = edges_successors[current_node_id].size();
+		for (int j = 0; j < nb_succ_edges; j++)
+		{
+
+			Edge* curr_edge = edges_successors[current_node_id][j]; //this->getGivenEdge(current_node_id, tmp_ptr_node->getId());
+			Node* tmp_ptr_node = getPtrNode(curr_edge->get_node_id_2());
+			//cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
+
+			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'ï¿½tait pas dï¿½jï¿½ atteint avec une plus petite distance
+			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
+			{
+				// Mise ï¿½ jour du nouveau label distance pour ce voisi
+				tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+				//Ajout du voisin dans la liste ï¿½ explorer si pas deja present
+				if (tmp_ptr_node->getIsVisited() == false)
+				{
+					tmp_ptr_node->setIsVisisted(true);
+					nodes_stack.push_back(tmp_ptr_node);
+					nodes_stack_to_reset.push_back(tmp_ptr_node);
+
+					// Ajouter l'arc dans la liste des arcs atteignables par pour la Tile
+					currTile->getEdgeVisibility().push_back(curr_edge);
+					
+				}
+			}
+		}
+
+		// Trier le vecteur par ordre dï¿½crosisant des distance
+		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
+
+		// Affichage de la liste
+
+		/*for (int i = 0; i < nodes_stack.size(); i++)
+			cout << "id = " << nodes_stack[i]->getId() << " dist = " << nodes_stack[i]->getDist() << endl;
+		cout << "  ---- " << endl;*/
+	} while (nodes_stack.size() > 0);
+
+	// TODO: insï¿½rer une instruction return ici
 	// reset nodes
 	reset_list_of_nodes(nodes_stack_to_reset);
 }
@@ -250,6 +329,7 @@ bool Graph::doPathexists(long int start, long int end){
 	return founded;
 }
 
+// pas utilisÃ©
 void Graph::findPossibleODPairs(int nbPairs){
 	std::ofstream pairsFile;
 	pairsFile.open("./Graph_data/sf_pairs.csv", ios::out);

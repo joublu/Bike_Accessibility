@@ -4,7 +4,8 @@
 #include <iostream>
 
 
-// la fonction initialize_tiles_visibility_set doit déjà avoir été appelée
+// la fonction initialize_tiles_visibility_set doit dï¿½jï¿½ avoir ï¿½tï¿½ appelï¿½e
+// pas utilisÃ©e
 void Tiles::initialize_reachable_poi()
 {
 	for (int i = 0; i < nb_poi; i++)
@@ -20,7 +21,7 @@ void Tiles::initialize_reachable_poi()
 			{
 				if ((*it)->get_node_id_1() == curr_poi_node || (*it)->get_node_id_2() == curr_poi_node)
 				{
-					// verifier que le poi n'est pas déjà dans la liste des poi atteignable
+					// verifier que le poi n'est pas dï¿½jï¿½ dans la liste des poi atteignable
 					bool inserer = true;
 					for(vector<POI*>::iterator it_poi = list_of_tiles[t]->getPotentialPoi().begin(); it_poi != list_of_tiles[t]->getPotentialPoi().end(); it_poi++)
 					{
@@ -40,6 +41,13 @@ void Tiles::initialize_reachable_poi()
 void Tiles::initialize_reachable_poi_v2()
 {
 	cout << "enter initialize_reachable_poi_v2" << endl;
+	/*
+	somme_without_poi = nb de carreaux sans POI atteignable
+	nb_ppoi_tile_couple = nb initial de couple POI - carreaux 
+	nb_attached_poi = diff pr chaque carreau, nb de POI potentiellement attachÃ©s Ã  ce carreau
+	couple_size_var_tab = somme sur carreaux de nb_attached_poi
+	size_var_tab = "Tiles size var tab value"
+	*/
 	int somme_without_poi = 0;
 	nb_ppoi_tile_couple = 0;
 	size_var_tab = 0;
@@ -48,10 +56,10 @@ void Tiles::initialize_reachable_poi_v2()
 	for (int t = 0; t < nb_tiles; t++)
 	{
 		int nb_attached_poi = 0;
-		// Parcourir la liste des noeuds dans la visibilité
+		// Parcourir la liste des noeuds dans la visibilitï¿½
  		for (vector<Node*>::iterator it = list_of_tiles[t]->getNodeVisibility().begin(); it != list_of_tiles[t]->getNodeVisibility().end(); it++)
 		{
-			//Parcourir les POI attachés à chaque noeud de la visibilité pour les ajouter dans les poi de la tile
+			//Parcourir les POI attachï¿½s ï¿½ chaque noeud de la visibilitï¿½ pour les ajouter dans les poi de la tile
 			for (vector<POI*>::iterator it_poi = (*it)->getListOfAttachedPoi().begin(); it_poi != (*it)->getListOfAttachedPoi().end(); it_poi++)
 			{
 				list_of_tiles[t]->getPotentialPoi().push_back(*it_poi);
@@ -64,13 +72,13 @@ void Tiles::initialize_reachable_poi_v2()
 		if (nb_attached_poi == 0)somme_without_poi++;
 	}
 	cout << " TILES WITHOUT REACHABLE POI = " << somme_without_poi << endl;
-	cout << " NUMBER OF PPOI AND ZONES COUPLE = " << nb_ppoi_tile_couple << endl;
+	cout << " NUMBER OF PPOI AND ZONES COUPLE = " << nb_ppoi_tile_couple << endl; // initial 
 
 }
 
 void Tiles::display_carreaux_data()
 {
-	int nb_needed_var = 0;
+	int nb_needed_var = 0; // meme truc que size_var_tab ds fonction prec (?)
 	for (int t = 0; t < nb_tiles; t++)
 	{
 		nb_needed_var += list_of_tiles[t]->getEdgeVisibility().size() * list_of_tiles[t]->getPotentialPoi().size();

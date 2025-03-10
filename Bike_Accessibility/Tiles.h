@@ -10,10 +10,10 @@ private:
 	vector<Tile*> list_of_tiles;
 	vector<POI*> list_of_poi;
 
-	long int size_var_tab;
-	long int couple_size_var_tab;
+	long int size_var_tab; // voir
+	long int couple_size_var_tab; // voir 
 
-	long int nb_ppoi_tile_couple;
+	long int nb_ppoi_tile_couple; // voir 
 public:
 	Tiles(long int _nb = 0) : nb_tiles(_nb) {
 		size_var_tab = 0; couple_size_var_tab = 0; nb_ppoi_tile_couple = 0;

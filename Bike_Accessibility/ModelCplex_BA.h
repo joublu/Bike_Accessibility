@@ -26,6 +26,7 @@ struct couple_type {
 	}
 };
 
+// revoir pq utiliser un template
 namespace std {
 	template<>
 	struct hash<key_type> {
@@ -54,7 +55,7 @@ class ModelCplex_BA
 private:
 	std::string nameModel;
 
-	//** Attributs du modèle **//
+	//** Attributs du modï¿½le **//
 	IloEnv env;
 	float budget;
 	double LTS_max;
@@ -91,7 +92,7 @@ private:
 	IloNumVarArray SB_var;
 		
 	IloNumVarArray D_var;//D : distance between a poi and a zone
-	IloNumVarArray PPOI_var; // PPOI barre : indique si le poi est atteignable par z dans la limite de distance donnée
+	IloNumVarArray PPOI_var; // PPOI barre : indique si le poi est atteignable par z dans la limite de distance donnï¿½e
 
 	// Cplex attribut
 	IloCplex cplex;
@@ -115,7 +116,7 @@ private:
 	
 
 public:
-	/// Dmax doit avoir la même valeur que la fonction qui a intialisée la visibilité des carreaux
+	/// Dmax doit avoir la mï¿½me valeur que la fonction qui a intialisï¿½e la visibilitï¿½ des carreaux
 	ModelCplex_BA(Graph* _g, Tiles* _t, float _b, double _ltsmax, float _dmax);
 	~ModelCplex_BA();
 
