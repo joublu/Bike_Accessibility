@@ -121,7 +121,7 @@ void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 		curr_dist = current_node_ptr->getDist(); // 1ere iteration c'est 0
 		current_node_id = current_node_ptr->getId();
 		nodes_stack.pop_back(); // destroys the elem
-		//cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
+		// cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
 
 		// on ajoute le noeud à ceux visibles (pcq ds nodes_stack, d'ou vient current_node_ptr,
 		// on ajd seulement des noeuds visibles (cf l140))
@@ -134,9 +134,9 @@ void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 
 			Edge* curr_edge = edges_successors[current_node_id][j]; //this->getGivenEdge(current_node_id, tmp_ptr_node->getId());
 			Node* tmp_ptr_node = getPtrNode(curr_edge->get_node_id_2());
-			//cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
+			// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
-			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'�tait pas d�j� atteint avec une plus petite distance
+			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
 			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
 			{
 				// Mise � jour du nouveau label distance pour ce voisi
@@ -160,27 +160,41 @@ void Graph::compute_reachable_edges_v2(Tile* currTile, float dist_limit)
 
 		// Affichage de la liste
 
-		/*for (int i = 0; i < nodes_stack.size(); i++)
-			cout << "id = " << nodes_stack[i]->getId() << " dist = " << nodes_stack[i]->getDist() << endl;
-		cout << "  ---- " << endl;*/
+		//  for (int i = 0; i < nodes_stack.size(); i++)
+		//  	cout << "id = " << nodes_stack[i]->getId() << " dist = " << nodes_stack[i]->getDist() << endl;
+		//  cout << "  ---- " << endl;
 	} while (nodes_stack.size() > 0);
 
 	// TODO: ins�rer une instruction return ici
 	// reset nodes
+	// cout << "currTile " << currTile->getIdTile() << endl;
+	// cout << "getnodevisibility " << currTile->getNodeVisibility().size() << endl << endl;
+	//  cout << "currTile " << currTile->getIdTile() << endl;
+	//  for (int i = 0; i < currTile->getEdgeVisibility().size(); i++)
+	//  	cout << "node1 = " << currTile->getEdgeVisibility()[i]->get_node_id_1() << " node2 = " << currTile->getEdgeVisibility()[i]->get_node_id_2() << endl;
+	//  cout << "  ---- " << endl;
+	//  cout << "currTile " << currTile->getIdTile() << " size getEdgeVisibility " << currTile->getEdgeVisibility().size() << " size getNodeVisibility " << currTile->getNodeVisibility().size() << endl << endl;
 	reset_list_of_nodes(nodes_stack_to_reset);
 }
 
-// nouveau
-void Graph::compute_reachable_edges_v3(Tile* currTile, float dist_limit)
+/**
+ * Calcul de la visibilité des aretes pour un carreau donné
+ * La fonction calcule les arêtes visibles
+ * Différences avec v2 :
+ * 	- on ajoute l'arête même si le voisin a déjà été exploré
+ * 	- pas de condition "si ce noeud n'était pas déjà atteint avec une plus petite distance"
+ */
+void Graph::compute_reachable_edges_v4(Tile* currTile, float dist_limit)
 {
-	//cout << "enter get reachable " << endl;
-	//reset_nodes(); // le constructeur met deja la distance à infinity et
+	// cout << "enter get reachable " << endl;
+	// initialement l'attribut dist_label de chaque noeud est à infinity
+	// soit grâce au constructeur, soit grâce à reset_nodes
 
-	// Stack des noeuds � explorer
+	// Stack des noeuds à explorer
 	std::vector<Node*> nodes_stack;
 	std::vector<Node*> nodes_stack_to_reset;
 
-	// Noeud de d�part du Dijkstra
+	// Noeud de départ du Dijkstra
 	long int current_node_id = currTile->getIdcentralNode();
 	Node* current_node_ptr = getPtrNode(current_node_id);
 	current_node_ptr->setIsVisisted(true);
@@ -191,13 +205,14 @@ void Graph::compute_reachable_edges_v3(Tile* currTile, float dist_limit)
 	nodes_stack.push_back(current_node_ptr);
 	nodes_stack_to_reset.push_back(current_node_ptr);
 
+	// récupérer tous les reachables nodes
 	do {
-		// Retirer le neoud de queue (le vecteur est tri� par distance d�croissante)
-		current_node_ptr = nodes_stack.back(); // 1ere iteration c'est le noeud ligne 109
-		curr_dist = current_node_ptr->getDist(); // 1ere iteration c'est 0
+		// Retirer le neoud de queue (le vecteur est trié par distance décroissante)
+		current_node_ptr = nodes_stack.back();
+		curr_dist = current_node_ptr->getDist();
 		current_node_id = current_node_ptr->getId();
-		nodes_stack.pop_back(); // destroys the elem
-		//cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
+		nodes_stack.pop_back();
+		//  cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
 
 		// on ajoute le noeud à ceux visibles (pcq ds nodes_stack, d'ou vient current_node_ptr,
 		// on ajd seulement des noeuds visibles (cf l140))
@@ -207,43 +222,216 @@ void Graph::compute_reachable_edges_v3(Tile* currTile, float dist_limit)
 		int nb_succ_edges = edges_successors[current_node_id].size();
 		for (int j = 0; j < nb_succ_edges; j++)
 		{
-
 			Edge* curr_edge = edges_successors[current_node_id][j]; //this->getGivenEdge(current_node_id, tmp_ptr_node->getId());
 			Node* tmp_ptr_node = getPtrNode(curr_edge->get_node_id_2());
-			//cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
+			//  cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
-			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'�tait pas d�j� atteint avec une plus petite distance
-			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
+			// Si la distance pour atteindre le noeud est dans la limite 
+			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) )//&& (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
 			{
-				// Mise � jour du nouveau label distance pour ce voisi
+				// Mise à jour du nouveau label distance pour ce voisin
 				tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
-				//Ajout du voisin dans la liste � explorer si pas deja present
+
+				// Ajouter l'arc dans la liste des arcs atteignables pour la Tile
+				currTile->getEdgeVisibility().push_back(curr_edge);
+
+				// Ajout du voisin dans la liste à explorer si pas deja present
 				if (tmp_ptr_node->getIsVisited() == false)
 				{
 					tmp_ptr_node->setIsVisisted(true);
 					nodes_stack.push_back(tmp_ptr_node);
 					nodes_stack_to_reset.push_back(tmp_ptr_node);
-
-					// Ajouter l'arc dans la liste des arcs atteignables par pour la Tile
-					currTile->getEdgeVisibility().push_back(curr_edge);
-					
 				}
 			}
 		}
 
-		// Trier le vecteur par ordre d�crosisant des distance
+		// Trier le vecteur par ordre décroissant des distances
 		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
 
 		// Affichage de la liste
 
-		/*for (int i = 0; i < nodes_stack.size(); i++)
-			cout << "id = " << nodes_stack[i]->getId() << " dist = " << nodes_stack[i]->getDist() << endl;
-		cout << "  ---- " << endl;*/
+		//  for (int i = 0; i < nodes_stack.size(); i++)
+		//  	cout << "id = " << nodes_stack[i]->getId() << " dist = " << nodes_stack[i]->getDist() << endl;
+		//  cout << "  ---- " << endl;
 	} while (nodes_stack.size() > 0);
 
-	// TODO: ins�rer une instruction return ici
-	// reset nodes
+	// cout << "currTile " << currTile->getIdTile() << endl;
+	// cout << "getnodevisibility " << currTile->getNodeVisibility().size() << endl << endl;
+
+	//  for (int i = 0; i < currTile->getEdgeVisibility().size(); i++)
+	//  	cout << "node1 = " << currTile->getEdgeVisibility()[i]->get_node_id_1() << " node2 = " << currTile->getEdgeVisibility()[i]->get_node_id_2() << endl;
+	//  cout << "  ---- " << endl;
+	//  cout << "currTile " << currTile->getIdTile() << " size getEdgeVisibility " << currTile->getEdgeVisibility().size() << " size getNodeVisibility " << currTile->getNodeVisibility().size() << endl << endl;
 	reset_list_of_nodes(nodes_stack_to_reset);
+}
+
+/**
+ * Calcul de la visibilité des aretes pour un carreau donné
+ * La fonction calcule les noeuds visibles, puis retourne les arêtes dont les 2 noeuds sont visibles
+ */
+void Graph::compute_reachable_edges_v3(Tile* currTile, float dist_limit)
+{
+	// cout << "enter get reachable " << endl;
+	// initialement l'attribut dist_label de chaque noeud est à infinity
+	// soit grâce au constructeur, soit grâce à reset_nodes
+
+	// Stack des noeuds à explorer
+	std::vector<Node*> nodes_stack;
+	std::vector<Node*> nodes_stack_to_reset;
+
+	// Noeud de départ du Dijkstra
+	long int current_node_id = currTile->getIdcentralNode();
+	Node* current_node_ptr = getPtrNode(current_node_id);
+	current_node_ptr->setIsVisisted(true);
+	current_node_ptr->setDistance(0);
+	double curr_dist = 0;
+
+	// Ajout du noeud de depart dans la stack
+	nodes_stack.push_back(current_node_ptr);
+	nodes_stack_to_reset.push_back(current_node_ptr);
+
+	// récupérer tous les reachables nodes
+	do {
+		// Retirer le neoud de queue (le vecteur est trié par distance décroissante)
+		current_node_ptr = nodes_stack.back();
+		curr_dist = current_node_ptr->getDist();
+		current_node_id = current_node_ptr->getId();
+		nodes_stack.pop_back();
+		// cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
+
+		// on ajoute le noeud à ceux visibles (pcq ds nodes_stack, d'ou vient current_node_ptr,
+		// on ajd seulement des noeuds visibles (cf l140))
+		currTile->getNodeVisibility().push_back(current_node_ptr); 
+
+		//Parcourir les successseurs du noeud courant via la liste des edges
+		int nb_succ_edges = edges_successors[current_node_id].size();
+		for (int j = 0; j < nb_succ_edges; j++)
+		{
+			Edge* curr_edge = edges_successors[current_node_id][j]; //this->getGivenEdge(current_node_id, tmp_ptr_node->getId());
+			Node* tmp_ptr_node = getPtrNode(curr_edge->get_node_id_2());
+			// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
+
+			// Si la distance pour atteindre le noeud est dans la limite 
+			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit))
+			{
+				// Mise à jour du nouveau label distance pour ce voisin
+				tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+				//Ajout du voisin dans la liste à explorer si pas deja present
+				if (tmp_ptr_node->getIsVisited() == false)
+				{
+					tmp_ptr_node->setIsVisisted(true);
+					nodes_stack.push_back(tmp_ptr_node);
+					nodes_stack_to_reset.push_back(tmp_ptr_node);
+				}
+			}
+		}
+
+		// Trier le vecteur par ordre décroissant des distances
+		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
+
+		// Affichage de la liste
+
+		// for (int i = 0; i < nodes_stack.size(); i++)
+		// 	cout << "id = " << nodes_stack[i]->getId() << " dist = " << nodes_stack[i]->getDist() << endl;
+		// cout << "  ---- " << endl;
+	} while (nodes_stack.size() > 0);
+
+	// récupérer les edges entre les noeuds visibles
+	// en parcourant les noeuds visibles (à changer si dmax=5000)
+	for (int i = 0; i < currTile->getNodeVisibility().size(); i++)
+	{
+		Node* node1 = currTile->getNodeVisibility()[i];
+		for (int j = 0; j < currTile->getNodeVisibility().size(); j++)
+		{
+			Node* node2 = currTile->getNodeVisibility()[j];
+			Edge* curr_edge = this->getGivenEdge(node1->getId(), node2->getId());
+			if (curr_edge != nullptr)
+				currTile->getEdgeVisibility().push_back(curr_edge);
+		}
+	}
+
+	// cout << "currTile " << currTile->getIdTile() << endl;
+	// for (int i = 0; i < currTile->getEdgeVisibility().size(); i++)
+	// 	cout << "node1 = " << currTile->getEdgeVisibility()[i]->get_node_id_1() << " node2 = " << currTile->getEdgeVisibility()[i]->get_node_id_2() << endl;
+	// cout << "  ---- " << endl;
+	// cout << "currTile " << currTile->getIdTile() << " size getEdgeVisibility " << currTile->getEdgeVisibility().size() << " size getNodeVisibility " << currTile->getNodeVisibility().size() << endl << endl;
+	reset_list_of_nodes(nodes_stack_to_reset);
+}
+
+// l'objectif c'est d'eviter les arbres pr parcourir en effet chaque arete
+// ajt chaque arete entre 2 noeuds visibles
+void Graph::compute_reachable_edges_v0(Tile* currTile, float dist_limit)
+{
+	// cout << "=========================== " << endl;
+	// cout << "enter get reachable " << endl;
+	//reset_nodes(); // le constructeur met deja la distance à infinity et il est appelé avant
+
+	// Stack des noeuds à explorer
+	std::vector<Node*> nodes_stack;
+
+	// Noeud de départ du Dijkstra
+	long int current_node_id = currTile->getIdcentralNode();
+	Node* current_node_ptr = getPtrNode(current_node_id);
+	current_node_ptr->setIsVisisted(true);
+	current_node_ptr->setDistance(0);
+	double curr_dist = 0;
+	currTile->getNodeVisibility().push_back(current_node_ptr); // le noeud central est visible (d=0)
+
+	// Ajout de tous les noeuds dans la stack
+	for (int i = 0; i < nb_nodes; i++){
+		nodes_stack.push_back(getPtrNode(list_of_nodes[i].getId()));
+	}
+
+	do {
+		// Trier le vecteur par ordre décrosisant des distance dès le début
+		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
+		// Retirer le noeud de queue (le vecteur est trié par distance décroissante)
+		current_node_ptr = nodes_stack.back(); // 1ere iteration c'est le noeud ligne 109
+		curr_dist = current_node_ptr->getDist(); // 1ere iteration c'est 0
+		current_node_id = current_node_ptr->getId();
+		nodes_stack.pop_back(); // destroys the elem
+		// cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
+
+		//Parcourir les successeurs du noeud courant
+		for (int j = 0; j < successors[current_node_id].size(); j++)
+		{
+			Node* tmp_ptr_node = getPtrNode(successors[current_node_id][j]);
+
+			// On étudie le noeud seulement s'il n'est pas déjà visité (supp)
+			if(tmp_ptr_node->getIsVisited() == false)
+			{
+				Edge* curr_edge = this->getGivenEdge(current_node_id, tmp_ptr_node->getId() );
+				// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
+
+				// Si la distance pour atteindre le noeud est dans la limite 
+				if ( (curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) )
+				{
+					// Mise à jour du nouveau label distance pour ce voisin
+					tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+
+					// Ajouter l'arc dans la liste des arcs atteignables par pour la Tile
+					currTile->getEdgeVisibility().push_back(curr_edge);
+					currTile->getNodeVisibility().push_back(current_node_ptr);
+					tmp_ptr_node->setIsVisisted(true);
+				}
+			}
+		}
+		current_node_ptr->setIsVisisted(true);
+
+		// Affichage de la liste
+
+		// for (int i = 0; i < nodes_stack.size(); i++)
+		// 	cout << "id = " << nodes_stack[i]->getId() << " dist = " << nodes_stack[i]->getDist() << endl;
+		// cout << "  ---- " << endl;
+	} while (nodes_stack.size() > 0); // tous visités
+
+	//cout << "=========================== " << endl;
+	cout << "currTile " << currTile->getIdTile() << endl;
+	for (int i = 0; i < currTile->getEdgeVisibility().size(); i++)
+		cout << "node1 = " << currTile->getEdgeVisibility()[i]->get_node_id_1() << " node2 = " << currTile->getEdgeVisibility()[i]->get_node_id_2() << endl;
+	cout << "  ---- " << endl;
+	// cout << "currTile " << currTile->getIdTile() << " size getEdgeVisibility " << currTile->getEdgeVisibility().size() << " size getNodeVisibility " << currTile->getNodeVisibility().size() << endl << endl;
+	reset_nodes();
 }
 
 void Graph::initialize_tiles_visibility_set(Tiles* carreaux, float dist_limit)
@@ -252,6 +440,8 @@ void Graph::initialize_tiles_visibility_set(Tiles* carreaux, float dist_limit)
 	int nbTiles = carreaux->getNbTiles();
 	for (int i = 0; i < nbTiles; i++)
 	{
+		if (i == 564)
+			cout << "TILE " << i << endl;
 		//cout << "TILE " << i << endl;
 		this->compute_reachable_edges_v2(carreaux->getListeOfTiles()[i], dist_limit);
 	}
