@@ -1,1 +1,2 @@
 -enlever commentaires construction de GLOBALResFile dans ModelClex_BA.cpp
+-createArray -> createTableStats_compute_reachable_v2v4
