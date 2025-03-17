@@ -15,7 +15,11 @@ namespace myUtils
 		return (a->getDist() > b->getDist()  );
 	}
 
-	
+	inline bool sortbydecreasdistPCC(const PCC* a, const PCC* b)
+	{
+		return (a->getDist() > b->getDist()  );
+	}
+
 }
 
 #endif
