@@ -90,7 +90,7 @@ public:
 
 	//find existing paths
 	bool doPathexists(long int, long int);
-	bool doSecurePathExists(long int, long int, double lts_max);
+	bool doSecurePathExists(long int start, long int end, double lts_max, double dist_limit);
 	void findPossibleODPairs(int );
 
 	// find id when we know the name

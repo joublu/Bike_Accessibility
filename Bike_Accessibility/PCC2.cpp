@@ -6,9 +6,9 @@ using namespace std;
 // Graph::find_edges_to_change(Tiles* carreaux, float _b, double _ltsmax, float _dmax)
 // un similaire à ModelCplex_BA(Graph* _g, Tiles* _t, float _b, double _ltsmax, float _dmax)
 
-void PCC2::compute_objective()
+int PCC2::compute_objective()
 {
-    graph->find_edges_to_change(carreaux, budget, LTS_max, distance_max); // constructeur et heuristique 
+    // graph->find_edges_to_change(carreaux, budget, LTS_max, distance_max); // constructeur et heuristique 
     int PPOI_var = 0; // ce que va varier
     for (int z = 0; z < carreaux->getNbTiles(); z++)
     {
@@ -18,13 +18,13 @@ void PCC2::compute_objective()
         {
             PPOI_var++; // le ppoi est visible
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
-            if (graph->doSecurePathExists(z, poi_ptr->getPoiNode(), LTS_max))
+            if (graph->doSecurePathExists(z, poi_ptr->getPoiNode(), LTS_max, distance_max))
             {
                 PPOI_var--; // le ppoi est atteint
             }
         }
     }
-    ppoi_barre=PPOI_var; // revoir pr utiliser ca directement
+    return PPOI_var; // revoir pr utiliser ca directement
 }
 
 // mettre budget, LTS_max et distance_max dans la classe
@@ -65,6 +65,8 @@ void PCC2::solveModel() {
 
     graph->find_edges_to_change(carreaux, budget, LTS_max, distance_max); // constructeur et heuristique 
     int PPOI_var = 0; // ce que va varier
+
+    // mettre ca ds une nouvelle fonction
     for (int z = 0; z < carreaux->getNbTiles(); z++)
     {
         Tile* curr_tile = carreaux->getListeOfTiles()[z];
@@ -73,13 +75,15 @@ void PCC2::solveModel() {
         for (int p = 0; p < PPOI_visible; p++)
         {
             PPOI_var++; // le ppoi est visible
+            // cout<<"PPOI_var = "<<PPOI_var<<endl;
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
             // cout << "z p = " << curr_tile->getIdcentralNode() << " " << poi_ptr->getPoiNode() << endl;
-            if (graph->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max)) // voir direction
+            if (graph->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)) // voir direction
             {
                 // cout << "path exists" << endl;
                 PPOI_var--; // le ppoi est atteint
             }
+            // cout<<"PPOI_var = "<<PPOI_var<<endl;
         }
     }
     ppoi_barre=PPOI_var; // revoir pr utiliser ca directement
@@ -103,7 +107,6 @@ void PCC2::solveModel() {
         if (it->get_is_improved())
         {
             cout << "SB_e_" << ni << "_" << nj << " is improved" << endl;
-            resFile << ni << ";" << nj << endl;
             cpt_arcs_amenages++;
         }
         e++;
@@ -124,10 +127,24 @@ void PCC2::solveModel() {
     resFile << "LTS_max" << ";" << LTS_max << endl;
     resFile << "distance_max" << ";" << distance_max << endl;
 
-    resFile << "modelBuildingTime" << ";" << "N/A" << endl;
+    resFile << "modelBuildingTime" << ";" << 0 << endl;
     resFile << "resolutionTime" << ";" << resolutionTime << endl;
     resFile << "objective_value" << ";" << ppoi_barre << endl;
+    resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
 
     resFile << "arc_to_improve" << "; " << endl;
+
+    e = 0;
+    for (auto it = graph->getListOfEdges().begin(); it != graph->getListOfEdges().end(); it++)
+    {
+        
+        int ni = it->get_node_id_1();
+        int nj = it->get_node_id_2();
+        if (it->get_is_improved())
+        {
+            resFile << ni << ";" << nj << endl;
+        }
+        e++;
+    }  
  
 }

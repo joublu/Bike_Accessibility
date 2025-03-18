@@ -40,7 +40,7 @@ public:
 	};
 
 	// int compute_objective();
-	void compute_objective();
+	int compute_objective();
 	void solveModel();
 	string createFileName();
 };

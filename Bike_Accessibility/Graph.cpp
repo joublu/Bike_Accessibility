@@ -365,7 +365,7 @@ void Graph::initialize_tiles_visibility_set(Tiles* carreaux, float dist_limit)
 	int nbTiles = carreaux->getNbTiles();
 	for (int i = 0; i < nbTiles; i++)
 	{
-		this->compute_reachable_edges_v2(carreaux->getListeOfTiles()[i], dist_limit);
+		this->compute_reachable_edges_v4(carreaux->getListeOfTiles()[i], dist_limit);
 	}
 }
 
@@ -454,51 +454,74 @@ void Graph::populate_successors_precessors_secure(){
 	// }
 }
 
-// a ameliorer pr vitesse
-bool Graph::doSecurePathExists(long int start, long int end, double lts_max){
-	// cout << start << " " << end << endl;
-	if (start==end)
-		return true;
-	for (long int i = 0; i < list_of_nodes.size(); i++) // voir si utile
-		list_of_nodes[i].setIsVisisted(false);
+// le noeud start est tjrs un noeud z, donc le chemin pris est le même que dans find_edge_to_change
+// si ce n'était pas le cas, on aurait un pb de dénombrement des ppoi pour clc l'objectif
+// mais du coup là ça concorde
+bool Graph::doSecurePathExists(long int start, long int end, double lts_max, double dist_limit)
+{
+	if (start==end)	return true;
+
+	std::vector<Node*> nodes_stack;
+	std::vector<Node*> nodes_stack_to_reset;
 
 	bool founded = false;
-	std::vector<int> nodes_to_explore;
-	nodes_to_explore.push_back(start);
-	list_of_nodes[start].setIsVisisted(true);
-	while (founded == false && !(nodes_to_explore.empty()))
-	{
-		int current_node = nodes_to_explore[0];
-		nodes_to_explore.erase(nodes_to_explore.begin());
-		//std::cout << "current node = " << current_node << " successors size = " << successors[current_node].size() << std::endl;
-		for (int j = 0; j < successors[current_node].size(); j++)
+
+	long int current_node_id = start;
+	Node* current_node_ptr = getPtrNode(current_node_id);
+	current_node_ptr->setIsVisisted(true);
+	current_node_ptr->setDistance(0);
+	double curr_dist = 0;
+
+	// Ajout du noeud de depart dans la stack
+	nodes_stack.push_back(current_node_ptr);
+	nodes_stack_to_reset.push_back(current_node_ptr);
+
+	do {
+		// Retirer le neoud de queue (le vecteur est tri� par distance d�croissante)
+		current_node_ptr = nodes_stack.back(); // 1ere iteration c'est le noeud ligne 109
+		curr_dist = current_node_ptr->getDist(); // 1ere iteration c'est 0
+		current_node_id = current_node_ptr->getId();
+		nodes_stack.pop_back(); // destroys the elem
+		// cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
+
+		//Parcourir les successseurs du noeud courant via la liste des edges
+		int nb_succ_edges = edges_successors[current_node_id].size();
+		for (int j = 0; j < nb_succ_edges; j++)
 		{
-			int succ = successors[current_node][j];
-			Edge* curr_edge = this->getGivenEdge(current_node, succ);
-			// if we can use this edge
-			// cout << (curr_edge->get_edge_cost_1() <= lts_max) << (curr_edge->get_is_improved()) << endl;
-			if (curr_edge->get_edge_LTS() <= lts_max || curr_edge->get_is_improved())
-			{				
-				if (succ == end)
+			Edge* curr_edge = edges_successors[current_node_id][j]; //this->getGivenEdge(current_node_id, tmp_ptr_node->getId());
+			Node* tmp_ptr_node = getPtrNode(curr_edge->get_node_id_2());
+			// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
+
+			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
+			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
+			{
+				// on considère l'edge ssi on peut l'utiliser
+				if ((curr_edge->get_edge_LTS() <= lts_max || curr_edge->get_is_improved()))
 				{
-					founded = true;
-					break;
-				}
-				else
-				{
-					if (!(list_of_nodes[succ].getIsVisited()))
+					if (tmp_ptr_node->getId() == end)
 					{
-						nodes_to_explore.push_back(succ);
-						list_of_nodes[succ].setIsVisisted(true);
+						founded = true;
+						break;
+					}
+					// Mise � jour du nouveau label distance pour ce voisi
+					tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+					//Ajout du voisin dans la liste � explorer si pas deja present
+					if (tmp_ptr_node->getIsVisited() == false)
+					{
+						tmp_ptr_node->setIsVisisted(true);
+						nodes_stack.push_back(tmp_ptr_node);
+						nodes_stack_to_reset.push_back(tmp_ptr_node);
 					}
 				}
 			}
 		}
-	}
+		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
+	} while (nodes_stack.size() > 0);
+
+	reset_list_of_nodes(nodes_stack_to_reset);
 	return founded;
 }
 
-// pas utilisé
 void Graph::findPossibleODPairs(int nbPairs){
 	std::ofstream pairsFile;
 	pairsFile.open("./Graph_data/sf_pairs.csv", ios::out);
@@ -615,11 +638,11 @@ void Graph::find_edges_to_change(Tiles* carreaux, float _b, double _ltsmax, floa
 	// 2e partie : tri de ppcs
 	// tri décroissant
 	std::sort(pccs.begin(), pccs.end(), myUtils::sortbydecreasdistPCC);
-	cout<<"affichage des pccs apres tri"<<endl;
-	for(int i = 0; i < pccs.size(); i++)
-	{
-		cout << *pccs[i] << endl;
-	}
+	// cout<<"affichage des pccs apres tri"<<endl;
+	// for(int i = 0; i < pccs.size(); i++)
+	// {
+	// 	cout << *pccs[i] << endl;
+	// }
 
 	// on met à aménagé les edges qui ont deja le bon lts 
 	for(int i = 0; i < list_of_edges.size(); i++)
