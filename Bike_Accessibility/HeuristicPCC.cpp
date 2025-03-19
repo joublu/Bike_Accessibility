@@ -109,29 +109,34 @@ void HeuristicPCC::find_edges_to_change()
 	// tant qu'il y a du budget on aménage le premier pcc
 	// et on calcule le nv budget en prenant bien en compte si des aretes ont déjà été 
 	// prises en compte ds le budget
-	while (budget>0 && pccs.size()>0)
+    double curr_budget = budget;
+
+    vector<Edge*> added_edges; // sert si le budget est dépassé
+	while (curr_budget>0 && pccs.size()>0)
 	{
 		PCC* pcc = pccs.back(); // only returns a reference
-		vector<Edge*> added_edges; // empty revoir si supp
 		bool added_complete_pcc = true;
 
 		for (int i = 0; i < pcc->getPath().size(); i++)
 		{
-			if (budget>0)
+			if (curr_budget>0)
 			{
 				Edge* curr_edge = pcc->getPath()[i];
-				// on ne recompte pas (pr budget) les aretes déjà été aménagées/aretes qui ont le bon lts
+				// on ne recompte pas (pr curr_budget) les aretes déjà été aménagées/aretes qui ont le bon lts
 				if (curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > LTS_max)
 				{
-					budget -= curr_edge->get_edge_cost_1();
+					curr_budget -= curr_edge->get_edge_cost_1();
 					curr_edge->set_is_improved(true);
 					added_edges.push_back(curr_edge);
 				}
 			}
-			else
+			if (curr_budget<0)
 			{
+                Edge* curr_edge = added_edges.back();
+                curr_edge->set_is_improved(false);
+                added_edges.pop_back();
 				added_complete_pcc = false;
-				break;
+				break; // REVOIR: ne pas sortir de la boucle pr chercher une autre arete plus courte
 			}
 		}
 		// si l'on a parcouru ce pcc en entier, on le pop de la liste des pccs pour continuer de la parcourir 
