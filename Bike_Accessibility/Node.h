@@ -12,7 +12,7 @@ private:
 	long int id, name;
 	double coord_x, coord_y;
 	bool isVisisted; // for dijsktra
-	double dist_label; // voir distance to what
+	double dist_label; // for dijsktra
 	vector<POI*> list_of_attached_poi;
 public:
 	Node(long int _id, long int _name, double _x, double _y) : id(_id), name(_name), coord_x(_x), coord_y(_y), isVisisted(false), dist_label(std::numeric_limits<double>::infinity()) {};

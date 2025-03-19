@@ -52,6 +52,8 @@ void Tiles::initialize_reachable_poi_v2()
 	nb_ppoi_tile_couple = 0;
 	size_var_tab = 0;
 	couple_size_var_tab = 0;
+	int cpt_visible_nodes = 0;
+	int cpt_visible_edges = 0;
 	// Pour chaque carreau
 	for (int t = 0; t < nb_tiles; t++)
 	{
@@ -59,6 +61,7 @@ void Tiles::initialize_reachable_poi_v2()
 		// Parcourir la liste des noeuds dans la visibilit�
  		for (vector<Node*>::iterator it = list_of_tiles[t]->getNodeVisibility().begin(); it != list_of_tiles[t]->getNodeVisibility().end(); it++)
 		{
+			cpt_visible_nodes++;
 			//Parcourir les POI attach�s � chaque noeud de la visibilit� pour les ajouter dans les poi de la tile
 			for (vector<POI*>::iterator it_poi = (*it)->getListOfAttachedPoi().begin(); it_poi != (*it)->getListOfAttachedPoi().end(); it_poi++)
 			{
@@ -67,13 +70,16 @@ void Tiles::initialize_reachable_poi_v2()
 				nb_ppoi_tile_couple++;
 			}
 		}
+		cpt_visible_edges += list_of_tiles[t]->getEdgeVisibility().size();
 		couple_size_var_tab += nb_attached_poi;
 		size_var_tab += nb_attached_poi * list_of_tiles[t]->getEdgeVisibility().size();
 		if (nb_attached_poi == 0)somme_without_poi++;
 	}
 	cout << " TILES WITHOUT REACHABLE POI = " << somme_without_poi << endl;
 	cout << " NUMBER OF PPOI AND ZONES COUPLE = " << nb_ppoi_tile_couple << endl; // initial 
-
+	cout << " NUMBER OF size_var_tab" << size_var_tab << endl;
+	cout << " cpt_visible_nodes " << cpt_visible_nodes << endl;
+	cout << " cpt_visible_edges " << cpt_visible_edges << endl;
 }
 
 void Tiles::display_carreaux_data()

@@ -109,9 +109,7 @@ ModelCplex_BA::ModelCplex_BA(Graph* _g, Tiles* _t, float _b, double _ltsmax, flo
     modelBuildingTime = buildingStopTime - buildingStartTime;
 
     cout << "modelBuildingTime = " << modelBuildingTime << endl;
-   
-    cout << "\t- Call solve model " << endl;
-    this->solveModel(true, false, false);
+    // this->solveModel(true, false, false);
 }
 
 ModelCplex_BA::~ModelCplex_BA() {
@@ -677,6 +675,7 @@ void ModelCplex_BA::createObjectiveOnDistance()
 
 void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSolve) {
 
+    cout << "\t- Call solve model " << endl;
     cout << "enter solve" << endl;
     cplex.extract(model);
     //cplex.setParam(IloCplex::Param::Threads, 1);    
