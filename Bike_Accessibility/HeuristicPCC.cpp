@@ -1,12 +1,148 @@
-#include "PCC2.h"
+#include "HeuristicPCC.h"
+#include "Utils.h"
+#include <algorithm>
 
 using namespace std;
 
-// refaire le constructeur à partir de 
-// Graph::find_edges_to_change(Tiles* carreaux, float _b, double _ltsmax, float _dmax)
-// un similaire à ModelCplex_BA(Graph* _g, Tiles* _t, float _b, double _ltsmax, float _dmax)
 
-int PCC2::compute_objective()
+HeuristicPCC::HeuristicPCC(Graph* _g, Tiles* _t, float _b, double _ltsmax, float _dmax)
+{
+    budget = _b;
+    LTS_max = _ltsmax;
+    distance_max = _dmax;
+    graph = _g;
+    carreaux = _t;
+    ppoi_barre = 0;
+    resolutionTime = 0;
+
+    int id=0;
+    int nb_tiles = carreaux->getNbTiles();
+    for (int t = 0; t < nb_tiles; t++)
+	{
+		Tile* curr_tile=carreaux->getListeOfTiles()[t];
+		int central_node_id = curr_tile->getIdcentralNode();
+		// cpt_visible_nodes++;
+
+		//Parcourir les POI attachés à chaque noeud de la visibilité pour les ajouter dans les poi de la tile
+		// l'iterateur est un POI*
+		for (auto it_poi = curr_tile->getPotentialPoi().begin(); it_poi != curr_tile->getPotentialPoi().end(); it_poi++)
+		{
+			int curr_node_id = (*it_poi)->getPoiNode();
+
+			// stocker le PCC pcq ce noeud est un POI
+			// le noeud actuel ne doit pas etre le noeud central du carreau, pcq il n'a pas de pred
+			if (curr_node_id != curr_tile->getIdcentralNode())
+			{
+				int here = curr_node_id;
+				Node* pred= curr_tile->getPredAndDistForID(curr_node_id).first;
+				double dist= curr_tile->getPredAndDistForID(curr_node_id).second;
+				vector<Edge*> path;
+				// trouver le chemin (liste d'edge*)
+				while (pred != nullptr)
+				{
+					path.insert(path.begin(), _g->getGivenEdge(pred->getId(), here)); // va jusqu'à z (après plus de pred)
+					here = pred->getId();
+					pred= curr_tile->getPredAndDistForID(here).first;
+				}
+				// stocker le PCC
+				PCC* new_pcc = new PCC(id, central_node_id, curr_node_id, dist, path); // &PCC(id, curr_node_id, central_node_id, dist, path);
+				pccs.push_back(new_pcc);
+				
+			}
+			id++;
+		}
+	}
+
+    int cpt_nz_is_np=0;
+    for (int z = 0; z < carreaux->getNbTiles(); z++)
+    {
+        Tile* tile_ptr = carreaux->getListeOfTiles()[z];
+        int nb_ppoi = carreaux->getListeOfTiles()[z]->getPotentialPoi().size();
+        for (int p = 0; p < nb_ppoi; p++)
+        {
+            POI* poi_ptr = carreaux->getListeOfTiles()[z]->getPotentialPoi()[p];
+            long int node_poi_np = poi_ptr->getPoiNode();
+            if (tile_ptr->getIdcentralNode() == node_poi_np)
+            {
+                cpt_nz_is_np++;
+            }
+        }
+    }
+    cout << "cpt_nz_is_np = " << cpt_nz_is_np << endl;
+    long int map_size = carreaux->getsizeVarTab();
+    cout << "map_size = " << map_size << endl;
+}
+
+/**
+ * Heuristique
+ * Pour tous les couples noeuds-tildes, calculer le plus court chemin entre le couple
+ * Trier par reste à aménager
+ * 	Tant qu'il reste du budget
+ * 		Compléter le 1er
+ * 		Recalculer le score
+ */
+// this one should happen after initialize_reachable_poi_v2
+// voir si possible de fusionner ca avec une fonction similaire à
+// Tiles::initialize_reachable_poi_v2
+// (en terme de complexité c'est pas le plus couteux)
+void HeuristicPCC::find_edges_to_change()
+{
+	// 1ere partie : tri de ppcs
+	// tri décroissant
+	std::sort(pccs.begin(), pccs.end(), myUtils::sortbydecreasdistPCC);
+	// cout<<"affichage des pccs apres tri"<<endl;
+	// for(int i = 0; i < pccs.size(); i++)
+	// {
+	// 	cout << *pccs[i] << endl;
+	// }
+
+	// on met à "improved" les edges qui ont deja le bon lts 
+	for(int i = 0; i < graph->getListOfEdges().size(); i++)
+	{
+		Edge curr_edge = graph->getListOfEdges()[i];
+		if (curr_edge.get_edge_LTS() <= LTS_max)
+		{
+			curr_edge.set_is_improved(true);
+		}
+	}
+
+	// tant qu'il y a du budget on aménage le premier pcc
+	// et on calcule le nv budget en prenant bien en compte si des aretes ont déjà été 
+	// prises en compte ds le budget
+	while (budget>0 && pccs.size()>0)
+	{
+		PCC* pcc = pccs.back(); // only returns a reference
+		vector<Edge*> added_edges; // empty revoir si supp
+		bool added_complete_pcc = true;
+
+		for (int i = 0; i < pcc->getPath().size(); i++)
+		{
+			if (budget>0)
+			{
+				Edge* curr_edge = pcc->getPath()[i];
+				// on ne recompte pas (pr budget) les aretes déjà été aménagées/aretes qui ont le bon lts
+				if (curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > LTS_max)
+				{
+					budget -= curr_edge->get_edge_cost_1();
+					curr_edge->set_is_improved(true);
+					added_edges.push_back(curr_edge);
+				}
+			}
+			else
+			{
+				added_complete_pcc = false;
+				break;
+			}
+		}
+		// si l'on a parcouru ce pcc en entier, on le pop de la liste des pccs pour continuer de la parcourir 
+		if (added_complete_pcc)
+		{
+			pccs.pop_back();
+		}
+	}
+}
+
+int HeuristicPCC::compute_objective()
 {
     // graph->find_edges_to_change(carreaux, budget, LTS_max, distance_max); // constructeur et heuristique 
     int PPOI_var = 0; // ce que va varier
@@ -24,11 +160,10 @@ int PCC2::compute_objective()
             }
         }
     }
-    return PPOI_var; // revoir pr utiliser ca directement
+    return PPOI_var;
 }
 
-// mettre budget, LTS_max et distance_max dans la classe
-string PCC2::createFileName()
+string HeuristicPCC::createFileName()
 {
     string filename = "./Results/";
     filename += graph->getGraphName() + "_heuristique_";
@@ -51,7 +186,7 @@ string PCC2::createFileName()
     return filename;
 }
 
-void PCC2::solveModel() {
+void HeuristicPCC::solveModel() {
 
     cout << "enter solve" << endl;
 
@@ -63,7 +198,8 @@ void PCC2::solveModel() {
     clock_t start, finish;
     start=clock();
 
-    graph->find_edges_to_change(carreaux, budget, LTS_max, distance_max); // constructeur et heuristique 
+    find_edges_to_change(); // constructeur et heuristique 
+
     int PPOI_var = 0; // ce que va varier
 
     // mettre ca ds une nouvelle fonction

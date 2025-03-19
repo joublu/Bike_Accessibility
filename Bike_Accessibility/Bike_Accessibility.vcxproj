@@ -139,20 +139,21 @@
     <ClCompile Include="Bike_Accessibility.cpp" />
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="Graph.cpp" />
+    <ClCompile Include="HeuristicPCC.cpp" />
     <ClCompile Include="ModelCplex_BA.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Parser.cpp" />
-    <ClCompile Include="PCC2.cpp" />
     <ClCompile Include="POI.cpp" />
     <ClCompile Include="Tiles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Edge.h" />
     <ClInclude Include="Graph.h" />
+    <ClInclude Include="HeuristicPCC.h" />
     <ClInclude Include="ModelCplex_BA.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Parser.h" />
-    <ClInclude Include="PCC2.h" />
+    <ClInclude Include="PCC.h" />
     <ClInclude Include="POI.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="Tiles.h" />

@@ -578,136 +578,6 @@ void Graph::reset_list_of_nodes(std::vector<Node*> l)
 	}
 }
 
-/**
- * Heuristique
- * Pour tous les couples noeuds-tildes, calculer le plus court chemin entre le couple
- * Trier par reste à aménager
- * 	Tant qu'il reste du budget
- * 		Compléter le 1er
- * 		Recalculer le score
- */
-//this one should happen after initialize_reachable_poi_v2
-// voir si possible de fusionner ca avec une fonction similaire à
-// Tiles::initialize_reachable_poi_v2
-void Graph::find_edges_to_change(Tiles* carreaux, float _b, double _ltsmax, float _dmax)
-{
-	int somme_without_poi = 0;
-	int nb_tiles = carreaux->getNbTiles();
-	// int cpt_visible_nodes = 0;
-	// int cpt_visible_edges = 0;
-	vector<PCC*> pccs;
-	int id=0;
-
-	// premiere partie : construire pccs
-	for (int t = 0; t < nb_tiles; t++)
-	{
-		Tile* curr_tile=carreaux->getListeOfTiles()[t];
-		int central_node_id = curr_tile->getIdcentralNode();
-		// cpt_visible_nodes++;
-
-		//Parcourir les POI attachés à chaque noeud de la visibilité pour les ajouter dans les poi de la tile
-		// l'iterateur est un POI*
-		for (auto it_poi = curr_tile->getPotentialPoi().begin(); it_poi != curr_tile->getPotentialPoi().end(); it_poi++)
-		{
-			int curr_node_id = (*it_poi)->getPoiNode();
-
-			// stocker le PCC pcq ce noeud est un POI
-			// le noeud actuel ne doit pas etre le noeud central du carreau, pcq il n'a pas de pred
-			if (curr_node_id != curr_tile->getIdcentralNode())
-			{
-				int here = curr_node_id;
-				Node* pred= curr_tile->getPredAndDistForID(curr_node_id).first;
-				double dist= curr_tile->getPredAndDistForID(curr_node_id).second;
-				vector<Edge*> path;
-				// trouver le chemin (liste d'edge*)
-				while (pred != nullptr)
-				{
-					path.insert(path.begin(), this->getGivenEdge(pred->getId(), here)); // va jusqu'à z (après plus de pred)
-					here = pred->getId();
-					pred= curr_tile->getPredAndDistForID(here).first;
-				}
-				// stocker le PCC
-				PCC* new_pcc = new PCC(id, central_node_id, curr_node_id, dist, path); // &PCC(id, curr_node_id, central_node_id, dist, path);
-				pccs.push_back(new_pcc);
-				
-			}
-			id++; // voir si utile
-		}
-	}
-
-	// 2e partie : tri de ppcs
-	// tri décroissant
-	std::sort(pccs.begin(), pccs.end(), myUtils::sortbydecreasdistPCC);
-	// cout<<"affichage des pccs apres tri"<<endl;
-	// for(int i = 0; i < pccs.size(); i++)
-	// {
-	// 	cout << *pccs[i] << endl;
-	// }
-
-	// on met à aménagé les edges qui ont deja le bon lts 
-	for(int i = 0; i < list_of_edges.size(); i++)
-	{
-		Edge curr_edge = list_of_edges[i];
-		if (curr_edge.get_edge_LTS() <= _ltsmax)
-		{
-			curr_edge.set_is_improved(true);
-		}
-	}
-
-	float budget=_b;
-	// tant qu'il y a du budget on aménage le premier pcc
-	// et on calcule le nv budget en prenant bien en compte si des aretes ont déjà été 
-	// prises en compte ds le budget
-	while (budget>0 && pccs.size()>0)
-	{
-		PCC* pcc = pccs.back(); // only returns a reference
-		vector<Edge*> added_edges; // empty revoir si supp
-		bool added_complete_pcc = true;
-
-		for (int i = 0; i < pcc->getPath().size(); i++)
-		{
-			if (budget>0)
-			{
-				Edge* curr_edge = pcc->getPath()[i];
-				// on ne recompte pas (pr budget) les aretes déjà été aménagées/aretes qui ont le bon lts
-				if (curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > _ltsmax)
-				{
-					budget -= curr_edge->get_edge_cost_1();
-					curr_edge->set_is_improved(true);
-					added_edges.push_back(curr_edge);
-				}
-			}
-			else
-			{
-				added_complete_pcc = false;
-				break;
-			}
-		}
-		// si l'on a parcouru ce pcc en entier, on le pop de la liste des pccs pour continuer de la parcourir 
-		if (added_complete_pcc)
-		{
-			pccs.pop_back();
-		}		
-
-		// if (budget < 0)
-		// {
-		// 	// on remet le pcc dans la liste
-		// 	pccs.push_back(pcc);
-		// 	break; // berk changer
-		// }
-		// on ne recompte pas (pr budget) les aretes déjà été aménagées/aretes qui ont le bon lts
-		// for (int i = 0; i < pcc->getPath().size(); i++)
-		// {
-		// 	Edge* curr_edge = pcc->getPath()[i];
-		// 	if (curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > _ltsmax)
-		// 	{
-		// 		budget -= curr_edge->get_edge_cost_1();
-		// 		curr_edge->set_is_improved(true);
-		// 	}
-		// }
-	}
-}
-
 // après avoir clc le pcc entre le central node z et n2, si n2==p, on ajoute l'elem à PPCs 
 void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit)
 {
@@ -797,7 +667,7 @@ void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit)
 	reset_list_of_nodes(nodes_stack_to_reset);
 }
 
-
+// revoir comment changer ça pour ne pas avoir à changer manuellement dans le main
 void Graph::initialize_tiles_visibility_set_h(Tiles* carreaux, float dist_limit)
 {
 	reset_nodes();

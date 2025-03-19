@@ -6,7 +6,7 @@
 #include "Graph.h"
 #include "Tiles.h"
 #include "ModelCplex_BA.h"
-#include "PCC2.h"
+#include "HeuristicPCC.h"
 
 using namespace std;
 
@@ -26,7 +26,7 @@ int main()
     std::cout << "Hello World!\n";
    // string dirPath = "C:/Users/trault/source/repos/Bike_Accessibility/Bike_Accessibility";
     string dirPath = "./";
-    string instance_name = "Easy";
+    string instance_name = "Tours";
     Parser myParser;
     Graph* Tours = myParser.parse_nodes_and_edges_file(dirPath + "/Data_BA/" + instance_name + "_noeuds.csv", dirPath + "/Data_BA/" + instance_name + "_arcs.csv" , ';', instance_name, 1);
     // Graph* Tours = myParser.parse_nodes_and_edges_file_for_100N(dirPath + "/Tours_anonymized_100N/" + instance_name + "_noeuds.csv", dirPath + "/Data_BA/" + instance_name + "_arcs.csv" , ';', instance_name, 1);
@@ -35,7 +35,8 @@ int main()
     Tiles* carreaux = myParser.parse_filsofi_file(dirPath + "/Data_BA/" + instance_name + "_filosofi.csv", ';');
     cout << "nb carreaux = " << carreaux->getNbTiles() << endl;
 
-    float dmax = 10; // devrait etre 5000 pr tours
+    float dmax = 15; // devrait etre 5000 pr tours
+
     // Tours->initialize_tiles_visibility_set(carreaux, dmax);
     Tours->initialize_tiles_visibility_set_h(carreaux, dmax);
 
@@ -43,18 +44,14 @@ int main()
     cout << "nb POI = " << carreaux->getNbPoi() << endl;
     carreaux->initialize_reachable_poi_v2();
 
-    // arguments : Tiles*, budget, LTS max, distance max
-    // mettre ça dans une nouvelle classe avec la struct PCC
-    // Tours->find_edges_to_change(carreaux, 25, 1.5, dmax);
-    // arguments : budget, LTS max, distance max, Graph*, Tiles*
-    PCC2* pcc = new PCC2(25, 1.5, dmax, Tours, carreaux);
-    pcc->solveModel();
-    // après faut faire l'affichage du fichier et calculer PPOI barre
+    // arguments : Graph*, Tiles*, budget, LTS max, distance max
+    HeuristicPCC* pcc_model = new HeuristicPCC(Tours, carreaux, 20, 1.5, dmax);
+    pcc_model->solveModel();
 
     //carreaux->display_carreaux_data();
 
     // arguments : Graph*, Tiles*, budget, LTS max, distance max
-    // ModelCplex_BA* cplex_model = new ModelCplex_BA(Tours, carreaux, 25, 1.5, dmax);
+    // ModelCplex_BA* cplex_model = new ModelCplex_BA(Tours, carreaux, 20, 1.5, dmax);
 
     /*cplex_model->changeC13Constraints(1);
     cplex_model->solveModel(true, false, false);
