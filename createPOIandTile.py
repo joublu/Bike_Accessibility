@@ -2,6 +2,12 @@
 Script to help create a new POI file and a new tile file, from the dataset 100N
 TODO bouger tous les fichiers de Tours_anonymized_100N_2 dans data_BA
 TODO plutot copier coller le fichier des noeuds de Tours_anonymized_100N_2 dans data_BA
+
+HOW TO USE:
+1 Deplacer les fichiers arcs et noeuds ds data_BA
+2 s'assurer que la syntaxe de ces fichiers est la même que ceux déjà présents
+3 Mettre le bon dataset
+4 Changer le nombre de tiles n et m en fonction de ce que l'on veut
 '''
 
 # import os
@@ -9,23 +15,33 @@ import csv
 import matplotlib.pyplot as plt
 import random
 
-dataset = "100N_2"
-fullpath = f"Bike_Accessibility/Data_BA/{dataset}_noeuds.csv"
+dataset = "100N_1"
+nodes_file = f"Bike_Accessibility/Data_BA/{dataset}_noeuds.csv"
+
+source_poi_file = "Bike_Accessibility/Data_BA/Tours_poi.csv"
+source_filosofi_file = "Bike_Accessibility/Data_BA/Tours_filosofi.csv"
+
+output_poi_file = f"Bike_Accessibility/Data_BA/{dataset}_poi.csv"
+output_filosofi_file = f"Bike_Accessibility/Data_BA/{dataset}_filosofi.csv"
+
+print("nbPOI = number of POI to create, (n,m) = n*m tiles")
+nbPOI=int(input("nbPOI"))
+n=int(input("n"))
+m=int(input("m"))
+input("/!\ LANCER CE SCRIPT CHANGERA LES FICHIERS POI")
+
+# nbPOI = 12
+# n = 3
+# m = 3
+
 x = []
 y = []
 labels = [] # for node labels
-# pour les tiles
-# to compute the centroids
+
 lmin, lmax = float('inf'), float('-inf')
 Lmin, Lmax = float('inf'), float('-inf')
-n=3
-m=3
-tile_centroids = []
-# pour les POI
-nbPOI = 12
-new_poi_file = 0
 
-with open(fullpath, newline='') as f:
+with open(nodes_file, newline='') as f:
 	next(f) # skip header
 	reader = csv.reader(f, delimiter=';')
 	for row in reader:
@@ -52,59 +68,62 @@ with open(fullpath, newline='') as f:
 		label=row[0]
 		labels.append(label)
 
-''' to put the correct nodes in the POI file 
-(before that a POI file must be created by copy pasting the first nbPOI lines
-from the tours POI file)'''
-if new_poi_file:
-	indices = random.sample(range(len(x)), nbPOI)
-	print(indices)
-	random_nodes = [(x[i], y[i], labels[i]) for i in indices]
-	poi_file = f"Bike_Accessibility/Data_BA/{dataset}_poi.csv"
-	with open(poi_file, newline='') as fin:
-		reader = csv.DictReader(fin, delimiter=';')
-		rows = list(reader)
-		fieldnames = reader.fieldnames
-	for i, row in enumerate(rows):
-		row["id_node"] = random_nodes[i][2]
-	with open(poi_file, 'w', newline='') as fout:
-		writer = csv.DictWriter(fout, fieldnames=fieldnames, delimiter=';')
-		writer.writeheader()
-		writer.writerows(rows)
-	for poi in random_nodes:
-		plt.plot(poi[0], poi[1], 'go', markersize=10, alpha=0.5)
-		plt.annotate(poi[2], (poi[0], poi[1]))
+## POI
+poi_rows = []
+with open(source_poi_file, newline='') as fin:
+    reader = csv.DictReader(fin, delimiter=';')
+    fieldnames = reader.fieldnames
+    for i, row in enumerate(reader):
+        if i >= nbPOI: # revoir si pas +1 pr header
+            break
+        poi_rows.append(row)
+indices = random.sample(range(len(x)), nbPOI)
+random_nodes = [(x[i], y[i], labels[i]) for i in indices]
+for i, row in enumerate(poi_rows):
+    row["id_node"] = random_nodes[i][2]
+
+# Write new POI file
+with open(output_poi_file, 'w', newline='') as fout:
+    writer = csv.DictWriter(fout, fieldnames=fieldnames, delimiter=';')
+    writer.writeheader()
+    writer.writerows(poi_rows)
+
+# # things to plot
+# for poi in random_nodes:
+#     plt.plot(poi[0], poi[1], 'go', markersize=10, alpha=0.5)
+#     plt.annotate(poi[2], (poi[0], poi[1]))
 
 
-''' Pour créer le fichier des tiles
-TODO change the file like with the POI section'''
-# print(f"l={lmax-lmin}, L={Lmax-Lmin}")
-l = (lmax-lmin) / n
-L = (Lmax-Lmin) / m
+## filosofi
+tile_centroids = []
+tile_width = (lmax - lmin) / n
+tile_height = (Lmax - Lmin) / m
 
 for i in range(n):
-	for j in range(m):
-		x_min = i * l + lmin
-		x_max = (i + 1) * l + lmin
-		y_min = j *L + Lmin
-		y_max = (j + 1) * L+ Lmin
-		# # plot the grid
+    for j in range(m):
+        x_min = i * tile_width + lmin
+        x_max = (i + 1) * tile_width + lmin
+        y_min = j * tile_height + Lmin
+        y_max = (j + 1) * tile_height + Lmin
+        # # plot the grid
 		# plt.plot(x_min, y_min, 'go')
 		# plt.plot(x_max, y_max, 'go')
 		# plt.plot(x_min, y_max, 'go')
 		# plt.plot(x_max, y_min, 'go')
-		points_in_tile = [(xx, yy, lab) for xx, yy, lab in zip(x, y, labels) if x_min <= xx < x_max and y_min <= yy < y_max]
-		if points_in_tile:
-			avg_x = sum(pt[0] for pt in points_in_tile) / len(points_in_tile)
-			avg_y = sum(pt[1] for pt in points_in_tile) / len(points_in_tile)
-			dmin=float('inf')
-			for k in range(len(points_in_tile)):
-				d = ((points_in_tile[k][0]-avg_x)**2 + (points_in_tile[k][1]-avg_y)**2)**(1/2)
-				if d < dmin:
-					centroid = points_in_tile[k]
-					dmin = d
-			tile_centroids.append(centroid)
-		else:
-			tile_centroids.append(None) # to keep the ordrer
+        points_in_tile = [(xx, yy, lab) for xx, yy, lab in zip(x, y, labels) if x_min <= xx < x_max and y_min <= yy < y_max]
+        if points_in_tile:
+            avg_x = sum(pt[0] for pt in points_in_tile) / len(points_in_tile)
+            avg_y = sum(pt[1] for pt in points_in_tile) / len(points_in_tile)
+            dmin=float('inf')
+            centroid = None
+            for pt in points_in_tile:
+                d = ((pt[0]-avg_x)**2 + (pt[1]-avg_y)**2)**0.5
+                if d < dmin:
+                    dmin = d
+                    centroid = pt
+            tile_centroids.append(centroid)
+        else:
+            tile_centroids.append(None) # preserve order
 
 plt.scatter(x, y)
 
@@ -129,3 +148,24 @@ plt.title(f"Noeuds et centroides des carreaux ({n}*{m} carreaux), {dataset}")
 plt.xlabel("X")
 plt.ylabel("Y")
 plt.show()
+
+filosofi_rows = []
+with open(source_filosofi_file, newline='') as fin:
+    reader = csv.DictReader(fin, delimiter=';')
+    fieldnames_f = reader.fieldnames
+    for i, row in enumerate(reader):
+        if i >= n*m:
+            break
+        filosofi_rows.append(row)
+
+new_filosofi_rows = []
+for idx, row in enumerate(filosofi_rows):
+    if idx < len(tile_centroids) and tile_centroids[idx] is not None:
+        row["noeud_delegue"] = tile_centroids[idx][2]
+        new_filosofi_rows.append(row)
+    # otherwise, skip the row
+
+with open(output_filosofi_file, 'w', newline='') as fout:
+    writer = csv.DictWriter(fout, fieldnames=fieldnames_f, delimiter=';')
+    writer.writeheader()
+    writer.writerows(new_filosofi_rows)

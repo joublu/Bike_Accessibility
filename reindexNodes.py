@@ -1,18 +1,19 @@
-'''Script to reindex the nodes in the dataset 100N_2
+'''Script to reindex the nodes in the dataset
 OSM indexes become 0, 1, 2, ...'''
 
 import os
 import csv
 
 base_dir = "Bike_Accessibility/Data_BA/"
-nodes_file = os.path.join(base_dir, "100N_2_noeuds.csv")
-arcs_file = os.path.join(base_dir, "100N_2_arcs.csv")
-poi_file = os.path.join(base_dir, "100N_2_poi.csv")
-filosofi_file = os.path.join(base_dir, "100N_2_filosofi.csv")
-nodes_file_new = os.path.join(base_dir, "100N_2_reindexed_noeuds.csv")
-arcs_file_new = os.path.join(base_dir, "100N_2_reindexed_arcs.csv")
-poi_file_new = os.path.join(base_dir, "100N_2_reindexed_poi.csv")
-filosofi_file_new = os.path.join(base_dir, "100N_2_reindexed_filosofi.csv")
+dataset="100N_1"
+nodes_file = os.path.join(base_dir, f"{dataset}_noeuds.csv")
+arcs_file = os.path.join(base_dir, f"{dataset}_arcs.csv")
+poi_file = os.path.join(base_dir, f"{dataset}_poi.csv")
+filosofi_file = os.path.join(base_dir, f"{dataset}_filosofi.csv")
+nodes_file_new = os.path.join(base_dir, f"{dataset}_reindexed_noeuds.csv")
+arcs_file_new = os.path.join(base_dir, f"{dataset}_reindexed_arcs.csv")
+poi_file_new = os.path.join(base_dir, f"{dataset}_reindexed_poi.csv")
+filosofi_file_new = os.path.join(base_dir, f"{dataset}_reindexed_filosofi.csv")
 
 '''
 1 mapping
@@ -44,11 +45,13 @@ with open(arcs_file, newline='', encoding='utf-8') as fin:
     header_arcs = next(reader)  # header row
     arcs_rows.append(header_arcs)
     for row in reader:
+        row=row[1:]
+        print(row)
         old_start = row[0].strip()
         old_end = row[1].strip()
         # Substitute using mapping if possible
-        new_start = node_mapping.get(old_start, old_start)
-        new_end = node_mapping.get(old_end, old_end)
+        new_start = node_mapping.get(old_start, -1)
+        new_end = node_mapping.get(old_end, -1)
         row[0] = new_start
         row[1] = new_end
         arcs_rows.append(row)
