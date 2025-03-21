@@ -7,8 +7,8 @@ dataset="Tours"
 raw_table = []
 
 for filename in os.listdir(folder):
-    if (filename.startswith(dataset) and filename.endswith("_v4.csv")) or filename.startswith(f"{dataset}_heuristique"):
-    # if (filename.startswith(dataset)):
+    # if (filename.startswith(dataset) and filename.endswith("_v4.csv")) or filename.startswith(f"{dataset}_heuristique"):
+    if (filename.startswith(dataset)):
         fullpath = os.path.join(folder, filename)
         version = "PCC" if f"{dataset}_heuristique_" in filename else "methode exacte"
         
@@ -49,8 +49,7 @@ for row in raw_table:
     groups[key][row[0]] = row 
 
 final_table = []
-headers = ["B", "dmax", "lts", "#ppoi ME","#ppoi H", "OV ME","OV H","EFFICIENCY",
-           "time ME", "Time H", "TIME SAVED"]
+headers = ["B", "dmax", "lts", "#ppoi ME","#ppoi H", "OV ME","OV H","EFFICIENCY", "time ME", "Time H", "TIME SAVED"]
 
 for key, versions in groups.items():
     # Only add a row if we have both versions:
@@ -78,6 +77,7 @@ for key, versions in groups.items():
                 efficacite = 0
         elif obj_exact and obj_exact is not None and obj_heur is not None:
             efficacite = (1 + (obj_exact - obj_heur) / obj_heur)*100
+            # efficacite = 100*(obj_heur-obj_exact) / obj_exact # tifenn
             # efficacite = ((nb_ppoi - (obj_heur-obj_exact)) / nb_ppoi)*100
             # efficacite = obj_heur-obj_exact
         else:
