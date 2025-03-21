@@ -18,6 +18,30 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Edge.h" />
+    <ClInclude Include="src\Graph.h" />
+    <ClInclude Include="src\HeuristicPCC.h" />
+    <ClInclude Include="src\ModelCplex_BA.h" />
+    <ClInclude Include="src\Node.h" />
+    <ClInclude Include="src\Parser.h" />
+    <ClInclude Include="src\PCC.h" />
+    <ClInclude Include="src\POI.h" />
+    <ClInclude Include="src\Tile.h" />
+    <ClInclude Include="src\Tiles.h" />
+    <ClInclude Include="src\Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Bike_Accessibility.cpp" />
+    <ClCompile Include="src\Edge.cpp" />
+    <ClCompile Include="src\Graph.cpp" />
+    <ClCompile Include="src\HeuristicPCC.cpp" />
+    <ClCompile Include="src\ModelCplex_BA.cpp" />
+    <ClCompile Include="src\Node.cpp" />
+    <ClCompile Include="src\Parser.cpp" />
+    <ClCompile Include="src\POI.cpp" />
+    <ClCompile Include="src\Tiles.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -135,30 +159,6 @@
       <AdditionalDependencies>%(AdditionalDependencies);C:\Program Files\IBM\ILOG\CPLEX_Studio2212\cplex\lib\x64_windows_msvc14\stat_mda\cplex2212.lib;C:\Program Files\IBM\ILOG\CPLEX_Studio2212\cplex\lib\x64_windows_msvc14\stat_mda\ilocplex.lib;C:\Program Files\IBM\ILOG\CPLEX_Studio2212\concert\lib\x64_windows_msvc14\stat_mda\concert.lib;C:\Program Files\IBM\ILOG\CPLEX_Studio2212\cpoptimizer\lib\x64_windows_msvc14\stat_mda\cp.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Bike_Accessibility.cpp" />
-    <ClCompile Include="Edge.cpp" />
-    <ClCompile Include="Graph.cpp" />
-    <ClCompile Include="HeuristicPCC.cpp" />
-    <ClCompile Include="ModelCplex_BA.cpp" />
-    <ClCompile Include="Node.cpp" />
-    <ClCompile Include="Parser.cpp" />
-    <ClCompile Include="POI.cpp" />
-    <ClCompile Include="Tiles.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Edge.h" />
-    <ClInclude Include="Graph.h" />
-    <ClInclude Include="HeuristicPCC.h" />
-    <ClInclude Include="ModelCplex_BA.h" />
-    <ClInclude Include="Node.h" />
-    <ClInclude Include="Parser.h" />
-    <ClInclude Include="PCC.h" />
-    <ClInclude Include="POI.h" />
-    <ClInclude Include="Tile.h" />
-    <ClInclude Include="Tiles.h" />
-    <ClInclude Include="Utils.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
