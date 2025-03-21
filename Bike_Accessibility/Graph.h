@@ -61,6 +61,9 @@ public:
 	bool doSecurePathExists(long int start, long int end, double lts_max, double dist_limit);
 	void findPossibleODPairs(int );
 
+	// compute ppoi
+	int compute_objective(Tiles* carreaux, double lts_max, float dist_limit);
+
 	// find id when we know the name
 	long int getIdForNameNode(long int nameNode);
 
@@ -75,7 +78,7 @@ public:
 	void compute_reachable_edges_v3(Tile* currTile, float dist_limit);
 	void compute_reachable_edges_v4(Tile* currTile, float dist_limit);
 	void initialize_tiles_visibility_set(Tiles* carreaux, float dist);
-	void compute_reachable_edges_h(Tile* currTile, float dist_limit);
-	void initialize_tiles_visibility_set_h(Tiles* carreaux, float dist);
+	void compute_reachable_edges_h(Tile* currTile, float dist_limit, float lts_max);
+	void initialize_tiles_visibility_set_h(Tiles* carreaux, float dist, float lts_max);
 };
 

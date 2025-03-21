@@ -47,7 +47,7 @@ int main()
         cplex_model->solveModel(true, false, false);*/
     }
     else if (model == 1) {
-        Tours->initialize_tiles_visibility_set_h(carreaux, dmax);
+        Tours->initialize_tiles_visibility_set_h(carreaux, dmax, LTS_max);
         myParser.parse_POI_file(dirPath + "/Data_BA/" + instance_name + "_poi.csv", ';', carreaux, Tours);
         cout << "nb POI = " << carreaux->getNbPoi() << endl;
         carreaux->initialize_reachable_poi_v2();

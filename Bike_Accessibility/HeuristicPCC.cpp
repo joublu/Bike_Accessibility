@@ -76,15 +76,11 @@ HeuristicPCC::HeuristicPCC(Graph* _g, Tiles* _t, float _b, double _ltsmax, float
 /**
  * Heuristique
  * Pour tous les couples noeuds-tildes, calculer le plus court chemin entre le couple
- * Trier par reste à aménager
+ * Trier par distance z -> p ou par reste à aménager en fonction de compute_reachable_edges_h
  * 	Tant qu'il reste du budget
  * 		Compléter le 1er
  * 		Recalculer le score
  */
-// this one should happen after initialize_reachable_poi_v2
-// voir si possible de fusionner ca avec une fonction similaire à
-// Tiles::initialize_reachable_poi_v2
-// (en terme de complexité c'est pas le plus couteux)
 void HeuristicPCC::find_edges_to_change()
 {
 	// 1ere partie : tri de ppcs
@@ -96,25 +92,14 @@ void HeuristicPCC::find_edges_to_change()
 	// 	cout << *pccs[i] << endl;
 	// }
 
-	// on met à "improved" les edges qui ont deja le bon lts 
-	for(int i = 0; i < graph->getListOfEdges().size(); i++)
-	{
-		Edge curr_edge = graph->getListOfEdges()[i];
-		if (curr_edge.get_edge_LTS() <= LTS_max)
-		{
-			curr_edge.set_is_improved(true);
-		}
-	}
-
-	// tant qu'il y a du budget on aménage le premier pcc
-	// et on calcule le nv budget en prenant bien en compte si des aretes ont déjà été 
-	// prises en compte ds le budget
+	// tant qu'il y a du budget on aménage le premier pcc et on calcule le nv budget
+    // en prenant bien en compte si des aretes ont déjà été prises en compte ds le budget
     double curr_budget = budget;
 
     vector<Edge*> added_edges; // sert si le budget est dépassé
 	while (curr_budget>0 && pccs.size()>0)
 	{
-		PCC* pcc = pccs.back(); // only returns a reference
+		PCC* pcc = pccs.back();
 		bool added_complete_pcc = true;
 
 		for (int i = 0; i < pcc->getPath().size(); i++)
@@ -136,7 +121,7 @@ void HeuristicPCC::find_edges_to_change()
                 curr_edge->set_is_improved(false);
                 added_edges.pop_back();
 				added_complete_pcc = false;
-				break; // REVOIR: ne pas sortir de la boucle pr chercher une autre arete plus courte
+				break;
 			}
 		}
 		// si l'on a parcouru ce pcc en entier, on le pop de la liste des pccs pour continuer de la parcourir 
@@ -147,25 +132,41 @@ void HeuristicPCC::find_edges_to_change()
 	}
 }
 
-int HeuristicPCC::compute_objective()
+// même heuristique, sauf que l'on parcourt tous les arcs des pccs pour remplir le budget au max
+void HeuristicPCC::find_edges_to_change_v2()
 {
-    // graph->find_edges_to_change(carreaux, budget, LTS_max, distance_max); // constructeur et heuristique 
-    int PPOI_var = 0; // ce que va varier
-    for (int z = 0; z < carreaux->getNbTiles(); z++)
+	// 1ere partie : tri de ppcs
+	// tri décroissant
+	std::sort(pccs.begin(), pccs.end(), myUtils::sortbydecreasdistPCC);
+	// cout<<"affichage des pccs apres tri"<<endl;
+	// for(int i = 0; i < pccs.size(); i++)
+	// {
+	// 	cout << *pccs[i] << endl;
+	// }
+
+	// tant qu'il y a du budget on aménage le premier pcc et on calcule le nv budget en
+    // prenant bien en compte si des aretes ont déjà été prises en compte ds le budget
+    double curr_budget = budget;
+    vector<Edge*> added_edges; // sert si le budget est dépassé
+
+	while (pccs.size() > 0)
     {
-        Tile* curr_tile = carreaux->getListeOfTiles()[z];
-        int PPOI_visible = curr_tile->getPotentialPoi().size(); // nombre de ppoi visibles
-        for (int p = 0; p < PPOI_visible; p++)
+		PCC* pcc = pccs.back();
+        pccs.pop_back();
+        int i=0;
+        for (int i = 0; i < pcc->getPath().size(); i++)
         {
-            PPOI_var++; // le ppoi est visible
-            POI* poi_ptr = curr_tile->getPotentialPoi()[p];
-            if (graph->doSecurePathExists(z, poi_ptr->getPoiNode(), LTS_max, distance_max))
+            Edge* curr_edge = pcc->getPath()[i];
+            if (curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > LTS_max && curr_budget >= curr_edge->get_edge_cost_1())
             {
-                PPOI_var--; // le ppoi est atteint
+                curr_budget -= curr_edge->get_edge_cost_1();
+                curr_edge->set_is_improved(true);
+                added_edges.push_back(curr_edge);
             }
+            // sinon on skip cette arete et on continue
         }
-    }
-    return PPOI_var;
+        // rajouter qqch pr verifier la valeur du budget si elle est moins de ~3m on arrête
+	}
 }
 
 string HeuristicPCC::createFileName()
@@ -182,7 +183,6 @@ string HeuristicPCC::createFileName()
     std::string stringDmax = std::to_string(distance_max);
     stringDmax = stringDmax.substr(0, stringLTS.find('.') + 3);
 
-
     filename += "Budget_" + stringBudget;
     filename += "_LTSmax_" + stringLTS;
     filename += "_Dmax_" + stringDmax;
@@ -191,23 +191,8 @@ string HeuristicPCC::createFileName()
     return filename;
 }
 
-void HeuristicPCC::solveModel() {
-
-    cout << "enter solve" << endl;
-
-    // cout << "=========================================================================" << endl;
-
-    // env.out() << "Solution value = " << cplex.getObjValue() << endl;
-
-    resolutionTime = 0;
-    clock_t start, finish;
-    start=clock();
-
-    find_edges_to_change(); // constructeur et heuristique 
-
-    int PPOI_var = 0; // ce que va varier
-
-    // mettre ca ds une nouvelle fonction
+void HeuristicPCC::compute_objective()
+{
     for (int z = 0; z < carreaux->getNbTiles(); z++)
     {
         Tile* curr_tile = carreaux->getListeOfTiles()[z];
@@ -215,25 +200,62 @@ void HeuristicPCC::solveModel() {
         // cout << "PPOI_visible pour " << curr_tile->getIdTile() << " = " << PPOI_visible << endl;
         for (int p = 0; p < PPOI_visible; p++)
         {
-            PPOI_var++; // le ppoi est visible
+            ppoi_barre++; // le ppoi est visible
             // cout<<"PPOI_var = "<<PPOI_var<<endl;
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
             // cout << "z p = " << curr_tile->getIdcentralNode() << " " << poi_ptr->getPoiNode() << endl;
             if (graph->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)) // voir direction
             {
                 // cout << "path exists" << endl;
-                PPOI_var--; // le ppoi est atteint
+                ppoi_barre--; // le ppoi est atteint
             }
             // cout<<"PPOI_var = "<<PPOI_var<<endl;
         }
     }
-    ppoi_barre=PPOI_var; // revoir pr utiliser ca directement
+}
 
+// cette méthode se base seulement sur les pcc, mais il pourrait y avoir un autre chemin
+int HeuristicPCC::compute_objective_with_pccs()
+{
+    int res = pccs.size();
+    for (int i = 0; i < pccs.size(); i++)
+    {
+        // si le chemin est sur, 
+        PCC* pcc = pccs.back(); 
+        bool safe_path = true;
+
+		for (int i = 0; i < pcc->getPath().size(); i++)
+        {
+            Edge* curr_edge = pcc->getPath()[i];
+            if ((curr_edge->get_edge_LTS() > LTS_max) && !(curr_edge->get_is_improved()))
+            {
+                safe_path=false; // on ne peut pas accéder au chemin
+                break;
+            }
+        }
+        if (safe_path)
+        {
+            res--; // le ppoi est atteint
+        }
+    }
+    return res;
+}
+
+void HeuristicPCC::solveModel() 
+{
+    cout << "enter solve" << endl;
+
+    resolutionTime = 0;
+    clock_t start, finish;
+    start=clock();
+    find_edges_to_change_v2(); // heuristique 
+    compute_objective(); // calcul de la solution value (ppoi_barre)
     finish=clock();
     resolutionTime = (double)(finish - start) / CLOCKS_PER_SEC;
-    cout << "Temps de résolution: " << resolutionTime << endl;
 
+    cout << "Temps de résolution: " << resolutionTime << endl;
     cout << "Solution value  = " << ppoi_barre << endl;
+    cout << "solution value for pccs = " << compute_objective_with_pccs() << endl;
 
     std::ofstream resFile;
     resFile.open(createFileName(), ios::out);
@@ -287,5 +309,4 @@ void HeuristicPCC::solveModel() {
         }
         e++;
     }  
- 
 }

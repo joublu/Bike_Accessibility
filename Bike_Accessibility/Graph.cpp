@@ -441,22 +441,30 @@ bool Graph::doPathexists(long int start, long int end){
 	return founded;
 }
 
-// refaire mais en ajoutant une condition sur les edges qu'on ajoute, 
-// et ajouter des attributs successors_secure etc à la classe
-void Graph::populate_successors_precessors_secure(){
-	//std::cout << "enter populate with list_of_edges.size()=" << list_of_edges.size() << std::endl;
-	// for (long int e = 0; e < list_of_edges.size(); e++){
-	// 	successors[list_of_edges[e].get_node_id_1()].push_back(list_of_edges[e].get_node_id_2());
-	// 	predecessors[list_of_edges[e].get_node_id_2()].push_back(list_of_edges[e].get_node_id_1());
-
-	// 	edges_successors[list_of_edges[e].get_node_id_1()].push_back(&(list_of_edges[e]));
-	// 	edges_predecessors[list_of_edges[e].get_node_id_2()].push_back(&(list_of_edges[e]));
-	// }
+int Graph::compute_objective(Tiles* carreaux, double lts_max, float dist_limit)
+{
+    int PPOI_var = 0; // ce que va varier
+    for (int z = 0; z < carreaux->getNbTiles(); z++)
+    {
+        Tile* curr_tile = carreaux->getListeOfTiles()[z];
+        int PPOI_visible = curr_tile->getPotentialPoi().size(); // nombre de ppoi visibles
+        for (int p = 0; p < PPOI_visible; p++)
+        {
+            PPOI_var++; // le ppoi est visible
+            POI* poi_ptr = curr_tile->getPotentialPoi()[p];
+            if (this->doSecurePathExists(z, poi_ptr->getPoiNode(), lts_max, dist_limit))
+            {
+                PPOI_var--; // le ppoi est atteint
+            }
+        }
+    }
+    return PPOI_var;
 }
 
 // le noeud start est tjrs un noeud z, donc le chemin pris est le même que dans find_edge_to_change
 // si ce n'était pas le cas, on aurait un pb de dénombrement des ppoi pour clc l'objectif
 // mais du coup là ça concorde
+// a revoir pcq tous les chemins ne sont pas pris en compte
 bool Graph::doSecurePathExists(long int start, long int end, double lts_max, double dist_limit)
 {
 	if (start==end)	return true;
@@ -579,7 +587,7 @@ void Graph::reset_list_of_nodes(std::vector<Node*> l)
 }
 
 // après avoir clc le pcc entre le central node z et n2, si n2==p, on ajoute l'elem à PPCs 
-void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit)
+void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit, float lts_max)
 {
 	//cout << "enter get reachable " << endl;
 	//reset_nodes(); // le constructeur met deja la distance à infinity et
@@ -593,7 +601,9 @@ void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit)
 	Node* current_node_ptr = getPtrNode(current_node_id);
 	current_node_ptr->setIsVisisted(true);
 	current_node_ptr->setDistance(0);
+	current_node_ptr->setDistanceAAmenager(0);
 	double curr_dist = 0;
+	double curr_dist_a_amenager = 0;
 
 	// Ajout du noeud de depart dans la stack
 	nodes_stack.push_back(current_node_ptr);
@@ -601,31 +611,36 @@ void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit)
 
 	do {
 		// Retirer le neoud de queue (le vecteur est tri� par distance d�croissante)
-		current_node_ptr = nodes_stack.back(); // 1ere iteration c'est le noeud ligne 109
-		curr_dist = current_node_ptr->getDist(); // 1ere iteration c'est 0
+		current_node_ptr = nodes_stack.back();
+		curr_dist = current_node_ptr->getDist();
+		curr_dist_a_amenager = current_node_ptr->getDistAAmenager();
 		current_node_id = current_node_ptr->getId();
 		nodes_stack.pop_back(); // destroys the elem
 		// cout << "curr  node = " << current_node_id << " with dist label = " << curr_dist  <<  endl;
 
-		// on ajoute le noeud à ceux visibles (pcq ds nodes_stack, d'ou vient current_node_ptr,
-		// on ajd seulement des noeuds visibles (cf l140))
 		currTile->getNodeVisibility().push_back(current_node_ptr); 
 
 		//Parcourir les successseurs du noeud courant via la liste des edges
 		int nb_succ_edges = edges_successors[current_node_id].size();
 		for (int j = 0; j < nb_succ_edges; j++)
 		{
-
-			Edge* curr_edge = edges_successors[current_node_id][j]; //this->getGivenEdge(current_node_id, tmp_ptr_node->getId());
+			Edge* curr_edge = edges_successors[current_node_id][j];
 			Node* tmp_ptr_node = getPtrNode(curr_edge->get_node_id_2());
 			// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
 			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
 			double new_dist = curr_dist + curr_edge->get_edge_cost_1();
+			double new_dist_a_amenager = curr_dist;
+			if (curr_edge->get_edge_LTS() > lts_max)
+			{
+				new_dist_a_amenager += curr_edge->get_edge_cost_1();
+			}
+
 			if ((new_dist <= dist_limit) && (new_dist < tmp_ptr_node->getDist()))
 			{
 				// Mise � jour du nouveau label distance pour ce voisi
 				tmp_ptr_node->setDistance(new_dist);
+				tmp_ptr_node->setDistanceAAmenager(new_dist_a_amenager);
 				//Ajout du voisin dans la liste � explorer si pas deja present
 				if (tmp_ptr_node->getIsVisited() == false)
 				{
@@ -634,13 +649,14 @@ void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit)
 					nodes_stack_to_reset.push_back(tmp_ptr_node);
 
 					// Ajouter l'arc dans la liste des arcs atteignables par pour la Tile
-					// revoir si déplacer hors du if
+					// a priori s'il est deja visité il est deja dans getEdgeVisibility()
+					// revoir
 					currTile->getEdgeVisibility().push_back(curr_edge);
 				}
 
 				// stockage du predecesseur et de la distance au noeud délégué 
-				// revoir si l'on modifie bien la map
-				currTile->getPredAndDistForID(tmp_ptr_node->getId()) = std::pair<Node*, double>(current_node_ptr, new_dist);
+				// currTile->getPredAndDistForID(tmp_ptr_node->getId()) = std::pair<Node*, double>(current_node_ptr, new_dist);
+				currTile->getPredAndDistForID(tmp_ptr_node->getId()) = std::pair<Node*, double>(current_node_ptr, new_dist_a_amenager);
 					
 			}
 		}
@@ -668,12 +684,12 @@ void Graph::compute_reachable_edges_h(Tile* currTile, float dist_limit)
 }
 
 // revoir comment changer ça pour ne pas avoir à changer manuellement dans le main
-void Graph::initialize_tiles_visibility_set_h(Tiles* carreaux, float dist_limit)
+void Graph::initialize_tiles_visibility_set_h(Tiles* carreaux, float dist_limit, float lts_max)
 {
 	reset_nodes();
 	int nbTiles = carreaux->getNbTiles();
 	for (int i = 0; i < nbTiles; i++)
 	{
-		this->compute_reachable_edges_h(carreaux->getListeOfTiles()[i], dist_limit);
+		this->compute_reachable_edges_h(carreaux->getListeOfTiles()[i], dist_limit, lts_max);
 	}
 }
