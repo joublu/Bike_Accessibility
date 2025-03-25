@@ -24,19 +24,20 @@ source_filosofi_file = "Bike_Accessibility/Data_BA/Tours_filosofi.csv"
 output_poi_file = f"Bike_Accessibility/Data_BA/{dataset}_poi.csv"
 output_filosofi_file = f"Bike_Accessibility/Data_BA/{dataset}_filosofi.csv"
 
-print("nbPOI = number of POI to create, (n,m) = n*m tiles")
-nbPOI=int(input("nbPOI"))
-n=int(input("n"))
-m=int(input("m"))
-input("/!\ LANCER CE SCRIPT CHANGERA LES FICHIERS POI")
+# print("nbPOI = number of POI to create, (n,m) = n*m tiles")
+# nbPOI=int(input("nbPOI"))
+# n=int(input("n"))
+# m=int(input("m"))
+# input("/!\ LANCER CE SCRIPT CHANGERA LES FICHIERS POI")
 
-# nbPOI = 12
-# n = 3
-# m = 3
+nbPOI = 12
+n = 3
+m = 3
 
 x = []
 y = []
 labels = [] # for node labels
+thisdict= {}
 
 lmin, lmax = float('inf'), float('-inf')
 Lmin, Lmax = float('inf'), float('-inf')
@@ -67,6 +68,8 @@ with open(nodes_file, newline='') as f:
 		# n.append(tag)
 		label=row[0]
 		labels.append(label)
+		# print(label)
+		thisdict.update({int(label): coord})
 
 ## POI
 poi_rows = []
@@ -83,10 +86,10 @@ for i, row in enumerate(poi_rows):
     row["id_node"] = random_nodes[i][2]
 
 # Write new POI file
-with open(output_poi_file, 'w', newline='') as fout:
-    writer = csv.DictWriter(fout, fieldnames=fieldnames, delimiter=';')
-    writer.writeheader()
-    writer.writerows(poi_rows)
+# with open(output_poi_file, 'w', newline='') as fout:
+#     writer = csv.DictWriter(fout, fieldnames=fieldnames, delimiter=';')
+#     writer.writeheader()
+#     writer.writerows(poi_rows)
 
 # # things to plot
 # for poi in random_nodes:
@@ -143,6 +146,21 @@ for centroid in tile_centroids:
 
 centroid_labels = [centroid[2] for centroid in tile_centroids if centroid is not None]
 # print("Centroid labels:", centroid_labels)
+
+# Plot arcs
+arcs_file = f"Bike_Accessibility/Data_BA/{dataset}_arcs.csv"
+with open(arcs_file, newline='') as f:
+    reader = csv.DictReader(f, delimiter=';')
+    for row in reader:
+        startn = int(row["start_node"])
+        endn = int(row["end_node"])
+        # startn = int(row["nodeI"])
+        # endn = int(row["nodeJ"])
+        x_start, y_start = thisdict[startn][0], thisdict[startn][1]
+        x_end, y_end = thisdict[endn][0], thisdict[endn][1]
+        dx = x_end - x_start
+        dy = y_end - y_start
+        plt.arrow(x_start, y_start, dx, dy, width=0.00001, alpha=0.5)
 
 plt.title(f"Noeuds et centroides des carreaux ({n}*{m} carreaux), {dataset}")
 plt.xlabel("X")

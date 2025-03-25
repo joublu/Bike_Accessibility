@@ -15,6 +15,9 @@ HeuristicPCC::HeuristicPCC(Graph* _g, Tiles* _t, float _b, double _ltsmax, float
     ppoi_barre = 0;
     resolutionTime = 0;
 
+    clock_t start, finish;
+    start=clock();
+
     int id=0;
     int nb_tiles = carreaux->getNbTiles();
     for (int t = 0; t < nb_tiles; t++)
@@ -38,13 +41,18 @@ HeuristicPCC::HeuristicPCC(Graph* _g, Tiles* _t, float _b, double _ltsmax, float
 				double dist= curr_tile->getPredAndDistForID(curr_node_id).second;
 				vector<Edge*> path;
 				// trouver le chemin (liste d'edge*)
+                // int cmpt=0;
 				while (pred != nullptr)
 				{
+                    // cout << pred->getId() << " " << here << endl;
+                    // cmpt++;
 					path.insert(path.begin(), _g->getGivenEdge(pred->getId(), here)); // va jusqu'à z (après plus de pred)
 					here = pred->getId();
 					pred= curr_tile->getPredAndDistForID(here).first;
 				}
+                // cout << "cmpt = " << cmpt << endl;
 				// stocker le PCC
+                // revoir ca pcq prends tant de temps (?)
 				PCC* new_pcc = new PCC(id, central_node_id, curr_node_id, dist, path); // &PCC(id, curr_node_id, central_node_id, dist, path);
 				pccs.push_back(new_pcc);
 				
@@ -71,6 +79,10 @@ HeuristicPCC::HeuristicPCC(Graph* _g, Tiles* _t, float _b, double _ltsmax, float
     cout << "cpt_nz_is_np = " << cpt_nz_is_np << endl;
     long int map_size = carreaux->getsizeVarTab();
     cout << "map_size = " << map_size << endl;
+
+    finish=clock();
+    modelBuildingTime = (double)(finish - start) / CLOCKS_PER_SEC;
+    cout << "modelBuildingTime: " << modelBuildingTime << endl;
 }
 
 /**
@@ -249,6 +261,7 @@ void HeuristicPCC::solveModel()
     clock_t start, finish;
     start=clock();
     find_edges_to_change_v2(); // heuristique 
+    // find_edges_to_change(); // heuristique 
     compute_objective(); // calcul de la solution value (ppoi_barre)
     finish=clock();
     resolutionTime = (double)(finish - start) / CLOCKS_PER_SEC;
@@ -290,7 +303,7 @@ void HeuristicPCC::solveModel()
     resFile << "LTS_max" << ";" << LTS_max << endl;
     resFile << "distance_max" << ";" << distance_max << endl;
 
-    resFile << "modelBuildingTime" << ";" << 0 << endl;
+    resFile << "modelBuildingTime" << ";" << modelBuildingTime << endl;
     resFile << "resolutionTime" << ";" << resolutionTime << endl;
     resFile << "objective_value" << ";" << ppoi_barre << endl;
     resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
