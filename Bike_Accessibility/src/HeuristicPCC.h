@@ -15,6 +15,7 @@ class HeuristicPCC
 {
 private:
 	float budget;
+	float budget_left;
 	double LTS_max;
 	float distance_max;
 	Graph* graph;
@@ -30,7 +31,7 @@ public:
 	HeuristicPCC(Graph* _g, Tiles* _t, float _b, double _ltsmax, float _dmax);
 
 	void find_edges_to_change();
-	void find_edges_to_change_v2();
+	void find_edges_to_change_fill_budget();
 
 	// int compute_objective();
 	void compute_objective();

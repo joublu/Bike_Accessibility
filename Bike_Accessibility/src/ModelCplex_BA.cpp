@@ -716,6 +716,14 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
             return;
         }
 
+        // calculer le budget utilisé (à optimiser)
+        double usedBudget = 0.0;
+        for (size_t e = 0; e < nbEdges; e++) {
+            if (cplex.getValue(SB_var[e]) >= 0.5)
+                usedBudget += graph->getGivenEdge(e)->get_edge_cost_1();
+        }
+        double budget_left = budget - usedBudget;
+
         std::ofstream GLOBALResFile;
         GLOBALResFile.open("./Results/global.csv", ios::app); // revoir nom pr qu'il soit unique etc (sinn ça pose des erreurs à l'execution)
         // if (!GLOBALResFile.is_open())
@@ -732,6 +740,7 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
         resFile << "nbPoiTileCouple" << ";" << carreaux->getNbPpoiTileCouple() << endl;
 
         resFile << "budget" << ";" << budget << endl;
+        resFile << "budget_left" << ";" << budget_left << endl;
         resFile << "LTS_max" << ";" << LTS_max << endl;
         resFile << "distance_max" << ";" << distance_max << endl;
 

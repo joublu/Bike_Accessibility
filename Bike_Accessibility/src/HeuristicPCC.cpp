@@ -8,6 +8,7 @@ using namespace std;
 HeuristicPCC::HeuristicPCC(Graph* _g, Tiles* _t, float _b, double _ltsmax, float _dmax)
 {
     budget = _b;
+    budget_left = _b;
     LTS_max = _ltsmax;
     distance_max = _dmax;
     graph = _g;
@@ -106,32 +107,32 @@ void HeuristicPCC::find_edges_to_change()
 
 	// tant qu'il y a du budget on aménage le premier pcc et on calcule le nv budget
     // en prenant bien en compte si des aretes ont déjà été prises en compte ds le budget
-    double curr_budget = budget;
 
     vector<Edge*> added_edges; // sert si le budget est dépassé
-	while (curr_budget>0 && pccs.size()>0)
+	while (budget_left>0 && pccs.size()>0)
 	{
 		PCC* pcc = pccs.back();
 		bool added_complete_pcc = true;
 
 		for (int i = 0; i < pcc->getPath().size(); i++)
 		{
-			if (curr_budget>0)
+			if (budget_left>0)
 			{
 				Edge* curr_edge = pcc->getPath()[i];
-				// on ne recompte pas (pr curr_budget) les aretes déjà été aménagées/aretes qui ont le bon lts
+				// on ne recompte pas (pr budget_left) les aretes déjà été aménagées/aretes qui ont le bon lts
 				if (curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > LTS_max)
 				{
-					curr_budget -= curr_edge->get_edge_cost_1();
+					budget_left -= curr_edge->get_edge_cost_1();
 					curr_edge->set_is_improved(true);
 					added_edges.push_back(curr_edge);
 				}
 			}
-			if (curr_budget<0)
+			if (budget_left<0)
 			{
                 Edge* curr_edge = added_edges.back();
                 curr_edge->set_is_improved(false);
                 added_edges.pop_back();
+                budget_left += curr_edge->get_edge_cost_1();
 				added_complete_pcc = false;
 				break;
 			}
@@ -142,10 +143,11 @@ void HeuristicPCC::find_edges_to_change()
 			pccs.pop_back();
 		}
 	}
+    cout << "budget_left : " << budget_left << endl;
 }
 
 // même heuristique, sauf que l'on parcourt tous les arcs des pccs pour remplir le budget au max
-void HeuristicPCC::find_edges_to_change_v2()
+void HeuristicPCC::find_edges_to_change_fill_budget()
 {
 	// 1ere partie : tri de ppcs
 	// tri décroissant
@@ -158,7 +160,6 @@ void HeuristicPCC::find_edges_to_change_v2()
 
 	// tant qu'il y a du budget on aménage le premier pcc et on calcule le nv budget en
     // prenant bien en compte si des aretes ont déjà été prises en compte ds le budget
-    double curr_budget = budget;
     vector<Edge*> added_edges; // sert si le budget est dépassé
 
 	while (pccs.size() > 0)
@@ -169,16 +170,16 @@ void HeuristicPCC::find_edges_to_change_v2()
         for (int i = 0; i < pcc->getPath().size(); i++)
         {
             Edge* curr_edge = pcc->getPath()[i];
-            if (curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > LTS_max && curr_budget >= curr_edge->get_edge_cost_1())
+            if (budget_left >= curr_edge->get_edge_cost_1() && curr_edge->get_is_improved() == false && curr_edge->get_edge_LTS() > LTS_max)
             {
-                curr_budget -= curr_edge->get_edge_cost_1();
+                budget_left -= curr_edge->get_edge_cost_1();
                 curr_edge->set_is_improved(true);
                 added_edges.push_back(curr_edge);
             }
             // sinon on skip cette arete et on continue
         }
-        // rajouter qqch pr verifier la valeur du budget si elle est moins de ~3m on arrête
 	}
+    cout << "budget_left : " << budget_left << endl;
 }
 
 string HeuristicPCC::createFileName()
@@ -205,6 +206,7 @@ string HeuristicPCC::createFileName()
 
 void HeuristicPCC::compute_objective()
 {
+    ppoi_barre = 0;
     for (int z = 0; z < carreaux->getNbTiles(); z++)
     {
         Tile* curr_tile = carreaux->getListeOfTiles()[z];
@@ -259,8 +261,10 @@ void HeuristicPCC::solveModel()
 
     resolutionTime = 0;
     clock_t start, finish;
+    // compute_objective();
+    // cout << "Solution value  = " << ppoi_barre << endl;
     start=clock();
-    find_edges_to_change_v2(); // heuristique 
+    find_edges_to_change_fill_budget(); // heuristique 
     // find_edges_to_change(); // heuristique 
     compute_objective(); // calcul de la solution value (ppoi_barre)
     finish=clock();
@@ -300,6 +304,7 @@ void HeuristicPCC::solveModel()
     resFile << "nbPoiTileCouple" << ";" << carreaux->getNbPpoiTileCouple() << endl;
 
     resFile << "budget" << ";" << budget << endl;
+    resFile << "budget_left" << ";" << budget_left << endl;
     resFile << "LTS_max" << ";" << LTS_max << endl;
     resFile << "distance_max" << ";" << distance_max << endl;
 
