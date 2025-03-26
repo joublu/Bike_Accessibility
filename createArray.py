@@ -2,7 +2,7 @@ import os
 import csv
 from tabulate import tabulate
 
-folder = "Bike_Accessibility/Results/"
+folder = "Bike_Accessibility/Results/Results_cas_CRE_v2"
 dataset="Tours"
 raw_table = []
 
@@ -10,16 +10,26 @@ for filename in os.listdir(folder):
     # if (filename.startswith(dataset) and filename.endswith("_v4.csv")) or filename.startswith(f"{dataset}_heuristique"):
     if (filename.startswith(dataset)):
         fullpath = os.path.join(folder, filename)
-        version = "PCC" if f"{dataset}_heuristique_" in filename else "methode exacte"
+        # version = "PCC" if f"{dataset}_heuristique_" in filename else "methode exacte"
+        if f"{dataset}_heuristique_hb" in filename:
+            version="h full budget"
+        elif f"{dataset}_heuristique" in filename:
+            version="h"
+        else:
+            version="methode exacte"
         
         with open(fullpath, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=';')
             budget = None
+            budget_left = None
             dmax = None
             LTS_max = None
             resolutionTime = None
+            modelBuildingTime = None
             nbPoiTileCouple = None
             objectiveValue = None
+            arc_count = 0
+            arc_section = False
             
             for row in reader:
                 if not row or row[0].strip() == "":
@@ -27,6 +37,8 @@ for filename in os.listdir(folder):
                 key = row[0].strip()
                 if key == "budget":
                     budget = row[1].strip()
+                if key == "budget_left":
+                    budget_left = row[1].strip()
                 if key == "distance_max":
                     dmax = row[1].strip()
                 elif key == "LTS_max":
@@ -39,7 +51,12 @@ for filename in os.listdir(folder):
                     nbPoiTileCouple = row[1].strip()
                 elif key == "objective_value":
                     objectiveValue = row[1].strip()
-            raw_table.append([version, budget, dmax, LTS_max, resolutionTime, nbPoiTileCouple, objectiveValue, modelBuildingTime])
+                elif key.startswith("arc_to_improve"):
+                    arc_section = True
+                elif arc_section:
+                    if any(col.strip() for col in row):
+                        arc_count += 1
+            raw_table.append([version, budget, dmax, LTS_max, resolutionTime, nbPoiTileCouple, objectiveValue, modelBuildingTime,arc_count, budget_left])
             
 groups = {}
 for row in raw_table:
@@ -49,13 +66,17 @@ for row in raw_table:
     groups[key][row[0]] = row 
 
 final_table = []
-headers = ["B", "dmax", "lts", "#ppoi ME","#ppoi H", "OV ME","OV H","EFFICIENCY", "time ME", "Time H", "TIME SAVED"]
+headers = ["B", "dmax", "lts", "#ppoi\nME","#ppoi\nH","#improved\nedges ME","#improved\nedges H","budget\nleft ME","budget\nleft H", "Obj Val\nME","Obj val\nH","EFFICIENCY", "time ME", "Time H", "TIME\nSAVED"]
 
 for key, versions in groups.items():
-    # Only add a row if we have both versions:
-    if "methode exacte" in versions and "PCC" in versions:
+    # Only add a row if we have all versions:
+    # if "methode exacte" in versions and "PCC" in versions:
+    # if "methode exacte" in versions and "h" in versions and "h full budget" in versions:
+    if "methode exacte" in versions and "h full budget" in versions:
         row_exact = versions["methode exacte"]
-        row_heur  = versions["PCC"]
+        # row_heur  = versions["PCC"]
+        # row_heur  = versions["h"]
+        row_heur  = versions["h full budget"]
         
         try:
             res_exact = float(row_exact[4]) + float(row_exact[7])
@@ -76,10 +97,10 @@ for key, versions in groups.items():
             else:
                 efficacite = 0
         elif obj_exact and obj_exact is not None and obj_heur is not None:
-            efficacite = (1 + (obj_exact - obj_heur) / obj_heur)*100
-            # efficacite = 100*(obj_heur-obj_exact) / obj_exact # tifenn
-            # efficacite = ((nb_ppoi - (obj_heur-obj_exact)) / nb_ppoi)*100
-            # efficacite = obj_heur-obj_exact
+            # efficacite = (1 + (obj_exact - obj_heur) / obj_heur)*100
+            # efficacite = 100*(obj_heur-obj_exact) / (obj_exact) # tifenn
+            # efficacite = (nb_ppoi-obj_heur-(nb_ppoi-obj_exact))/(nb_ppoi-obj_exact)*100
+            efficacite = (nb_ppoi-obj_heur)/(nb_ppoi-obj_exact)*100
         else:
             efficacite = ""
 
@@ -89,6 +110,10 @@ for key, versions in groups.items():
             row_exact[3], # lts
             row_exact[5], # nb ppoi exact
             row_heur[5], # nb ppoi heur
+            row_exact[8], # arc count exact
+            row_heur[8], # arc count heur
+            row_exact[9], # budget left exact
+            row_heur[9], # budget left heur
             row_exact[6], # obj exact
             row_heur[6], # obj heur
             efficacite,
