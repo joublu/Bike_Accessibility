@@ -142,6 +142,7 @@ void HeuristicPCC::find_edges_to_change()
 		{
 			pccs.pop_back();
 		}
+        else { break;} // dès qu'on ne peut pas ajouter une arete, on sort de la boucle
 	}
     cout << "budget_left : " << budget_left << endl;
 }
