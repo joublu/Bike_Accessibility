@@ -230,16 +230,17 @@ void Graph::compute_reachable_edges_v4(Tile* currTile, float dist_limit)
 			//  cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
 			// Si la distance pour atteindre le noeud est dans la limite 
-			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit))// && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
+			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit))
 			{
-				// Mise à jour du nouveau label distance pour ce voisin
-				tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+				// Mise à jour du nouveau label distance pour ce voisin SSI la nouvelle dist est inferieure
+				if (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()){
+					tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+				}
 
 				// Ajouter l'arc dans la liste des arcs atteignables pour la Tile
 				currTile->getEdgeVisibility().push_back(curr_edge);
 
 				// Ajout du voisin dans la liste à explorer si pas deja present
-				// a revoir, cf p19
 				if (tmp_ptr_node->getIsVisited() == false)
 				{
 					tmp_ptr_node->setIsVisisted(true);
