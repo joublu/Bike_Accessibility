@@ -205,6 +205,28 @@ string HeuristicPCC::createFileName()
     return filename;
 }
 
+string HeuristicPCC::createFileNameFillBudget()
+{
+    string filename = "./Results/";
+    filename += graph->getGraphName() + "_heuristique_HB_";
+
+    std::string stringBudget = std::to_string(budget);
+    stringBudget = stringBudget.substr(0, stringBudget.find('.'));
+
+    std::string stringLTS = std::to_string(LTS_max);
+    stringLTS = stringLTS.substr(0, stringLTS.find('.') + 3);
+    
+    std::string stringDmax = std::to_string(distance_max);
+    stringDmax = stringDmax.substr(0, stringLTS.find('.') + 3);
+
+    filename += "Budget_" + stringBudget;
+    filename += "_LTSmax_" + stringLTS;
+    filename += "_Dmax_" + stringDmax;
+    filename += ".csv";
+    std::cout << "filename = " << filename << endl;
+    return filename;
+}
+
 void HeuristicPCC::compute_objective()
 {
     ppoi_barre = 0;
@@ -262,11 +284,8 @@ void HeuristicPCC::solveModel()
 
     resolutionTime = 0;
     clock_t start, finish;
-    // compute_objective();
-    // cout << "Solution value  = " << ppoi_barre << endl;
     start=clock();
-    find_edges_to_change_fill_budget(); // heuristique 
-    // find_edges_to_change(); // heuristique 
+    find_edges_to_change(); // heuristique 
     compute_objective(); // calcul de la solution value (ppoi_barre)
     finish=clock();
     resolutionTime = (double)(finish - start) / CLOCKS_PER_SEC;
@@ -299,6 +318,79 @@ void HeuristicPCC::solveModel()
         return;
     }
  
+    resFile << "Heuristique PCC" << endl;
+    resFile << "graph_name" << ";" << graph->getGraphName() << endl;
+    resFile << "nbTiles" << ";" << carreaux->getNbTiles() << endl;
+    resFile << "nbPoi" << ";" << carreaux->getNbPoi() << endl;
+    resFile << "nbPoiTileCouple" << ";" << carreaux->getNbPpoiTileCouple() << endl;
+
+    resFile << "budget" << ";" << budget << endl;
+    resFile << "budget_left" << ";" << budget_left << endl;
+    resFile << "LTS_max" << ";" << LTS_max << endl;
+    resFile << "distance_max" << ";" << distance_max << endl;
+
+    resFile << "modelBuildingTime" << ";" << modelBuildingTime << endl;
+    resFile << "resolutionTime" << ";" << resolutionTime << endl;
+    resFile << "objective_value" << ";" << ppoi_barre << endl;
+    resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
+
+    resFile << "arc_to_improve" << "; " << endl;
+
+    e = 0;
+    for (auto it = graph->getListOfEdges().begin(); it != graph->getListOfEdges().end(); it++)
+    {
+        
+        int ni = it->get_node_id_1();
+        int nj = it->get_node_id_2();
+        if (it->get_is_improved())
+        {
+            resFile << ni << ";" << nj << endl;
+        }
+        e++;
+    }  
+}
+
+void HeuristicPCC::solveModelFillBudget() 
+{
+    cout << "enter solve fill budget" << endl;
+
+    resolutionTime = 0;
+    clock_t start, finish;
+    start=clock();
+    find_edges_to_change_fill_budget(); // heuristique 
+    compute_objective(); // calcul de la solution value (ppoi_barre)
+    finish=clock();
+    resolutionTime = (double)(finish - start) / CLOCKS_PER_SEC;
+
+    cout << "Temps de résolution: " << resolutionTime << endl;
+    cout << "Solution value  = " << ppoi_barre << endl;
+    cout << "solution value for pccs = " << compute_objective_with_pccs() << endl;
+
+    std::ofstream resFile;
+    resFile.open(createFileNameFillBudget(), ios::out);
+
+    long int cpt_arcs_amenages = 0;
+    size_t e = 0;
+    for (auto it = graph->getListOfEdges().begin(); it != graph->getListOfEdges().end(); it++)
+    {
+        
+        int ni = it->get_node_id_1();
+        int nj = it->get_node_id_2();
+        if (it->get_is_improved())
+        {
+            cout << "SB_e_" << ni << "_" << nj << " is improved" << endl;
+            cpt_arcs_amenages++;
+        }
+        e++;
+    }  
+
+    if (!resFile.is_open())
+    {
+        std::cout << "error opening results file" << endl;
+        return;
+    }
+ 
+    resFile << "Heuristique PCC fill budget" << endl;
     resFile << "graph_name" << ";" << graph->getGraphName() << endl;
     resFile << "nbTiles" << ";" << carreaux->getNbTiles() << endl;
     resFile << "nbPoi" << ";" << carreaux->getNbPoi() << endl;

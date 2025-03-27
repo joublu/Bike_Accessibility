@@ -897,7 +897,7 @@ void ModelCplex_BA::changeC13Constraints(double newLTSmax)
 string ModelCplex_BA::createFileName()
 {
     string filename = "./Results/";
-    filename += graph->getGraphName() + "_";
+    filename += graph->getGraphName() + "_ME_";
 
     std::string stringBudget = std::to_string(budget);
     stringBudget = stringBudget.substr(0, stringBudget.find('.'));

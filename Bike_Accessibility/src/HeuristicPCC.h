@@ -38,6 +38,8 @@ public:
 	// void compute_objective_with_pccs();
 	int compute_objective_with_pccs();
 	void solveModel();
+	void solveModelFillBudget();
 	string createFileName();
+	string createFileNameFillBudget();
 };
 
