@@ -1,38 +1,46 @@
 '''
-Script to help create a new POI file and a new tile file, from the dataset 100N
-TODO bouger tous les fichiers de Tours_anonymized_100N_2 dans data_BA
-TODO plutot copier coller le fichier des noeuds de Tours_anonymized_100N_2 dans data_BA
+Script to create a new POI file and a new tile file
 
 HOW TO USE:
-1 Deplacer les fichiers arcs et noeuds ds data_BA
-2 s'assurer que la syntaxe de ces fichiers est la même que ceux déjà présents
-3 Mettre le bon dataset
-4 Changer le nombre de tiles n et m en fonction de ce que l'on veut
+1 Mettre le bon dataset
+2 si dataset de felix, dans le fichier nodes changer les ; en , et supp les ( et )
+3 pour avoir la meme densité que tours :
+    - les POI doivent etre 1 POI pour 10 noeuds
+    - le nombre de tiles doit etre 5 noeuds par tile
 '''
 
 # import os
 import csv
 import matplotlib.pyplot as plt
-import random
+from random import sample as random_sample
+from shutil import copy as shutil_copy
 
-dataset = "100N_1"
-nodes_file = f"Bike_Accessibility/Data_BA/{dataset}_noeuds.csv"
+dataname = "1000N_0"
+dataset = f"export_instance/Tours_anonymized_1000N/Tours_anonymized_{dataname}"
+nodes_file = f"Bike_Accessibility/{dataset}/clean_data_nodes.csv"
+arcs_file = f"Bike_Accessibility/{dataset}/clean_data_arcs.csv"
+
+## copy nodes and arcs files
+output_nodes_file = f"Bike_Accessibility/Data_BA/{dataname}_noeuds.csv"
+output_arcs_file  = f"Bike_Accessibility/Data_BA/{dataname}_arcs.csv"
+shutil_copy(nodes_file, output_nodes_file)
+shutil_copy(arcs_file, output_arcs_file)
 
 source_poi_file = "Bike_Accessibility/Data_BA/Tours_poi.csv"
 source_filosofi_file = "Bike_Accessibility/Data_BA/Tours_filosofi.csv"
 
-output_poi_file = f"Bike_Accessibility/Data_BA/{dataset}_poi.csv"
-output_filosofi_file = f"Bike_Accessibility/Data_BA/{dataset}_filosofi.csv"
+output_poi_file = f"Bike_Accessibility/Data_BA/{dataname}_poi.csv"
+output_filosofi_file = f"Bike_Accessibility/Data_BA/{dataname}_filosofi.csv"
 
-# print("nbPOI = number of POI to create, (n,m) = n*m tiles")
-# nbPOI=int(input("nbPOI"))
-# n=int(input("n"))
-# m=int(input("m"))
-# input("/!\ LANCER CE SCRIPT CHANGERA LES FICHIERS POI")
+print("nbPOI = number of POI to create, (n,m) = n*m tiles")
+nbPOI=int(input("nbPOI"))
+n=int(input("n"))
+m=int(input("m"))
+input("/!\ LANCER CE SCRIPT CHANGERA LES FICHIERS POI")
 
-nbPOI = 12
-n = 3
-m = 3
+# nbPOI = 12
+# n = 3
+# m = 3
 
 x = []
 y = []
@@ -77,19 +85,19 @@ with open(source_poi_file, newline='') as fin:
     reader = csv.DictReader(fin, delimiter=';')
     fieldnames = reader.fieldnames
     for i, row in enumerate(reader):
-        if i >= nbPOI: # revoir si pas +1 pr header
+        if i >= nbPOI:
             break
         poi_rows.append(row)
-indices = random.sample(range(len(x)), nbPOI)
+indices =random_sample(range(len(x)), nbPOI)
 random_nodes = [(x[i], y[i], labels[i]) for i in indices]
 for i, row in enumerate(poi_rows):
     row["id_node"] = random_nodes[i][2]
 
 # Write new POI file
-# with open(output_poi_file, 'w', newline='') as fout:
-#     writer = csv.DictWriter(fout, fieldnames=fieldnames, delimiter=';')
-#     writer.writeheader()
-#     writer.writerows(poi_rows)
+with open(output_poi_file, 'w', newline='') as fout:
+    writer = csv.DictWriter(fout, fieldnames=fieldnames, delimiter=';')
+    writer.writeheader()
+    writer.writerows(poi_rows)
 
 # # things to plot
 # for poi in random_nodes:
@@ -109,10 +117,10 @@ for i in range(n):
         y_min = j * tile_height + Lmin
         y_max = (j + 1) * tile_height + Lmin
         # # plot the grid
-		# plt.plot(x_min, y_min, 'go')
-		# plt.plot(x_max, y_max, 'go')
-		# plt.plot(x_min, y_max, 'go')
-		# plt.plot(x_max, y_min, 'go')
+        plt.plot(x_min, y_min, 'go')
+        plt.plot(x_max, y_max, 'go')
+        plt.plot(x_min, y_max, 'go')
+        plt.plot(x_max, y_min, 'go')
         points_in_tile = [(xx, yy, lab) for xx, yy, lab in zip(x, y, labels) if x_min <= xx < x_max and y_min <= yy < y_max]
         if points_in_tile:
             avg_x = sum(pt[0] for pt in points_in_tile) / len(points_in_tile)
@@ -148,7 +156,6 @@ centroid_labels = [centroid[2] for centroid in tile_centroids if centroid is not
 # print("Centroid labels:", centroid_labels)
 
 # Plot arcs
-arcs_file = f"Bike_Accessibility/Data_BA/{dataset}_arcs.csv"
 with open(arcs_file, newline='') as f:
     reader = csv.DictReader(f, delimiter=';')
     for row in reader:

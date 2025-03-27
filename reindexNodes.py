@@ -46,7 +46,7 @@ with open(arcs_file, newline='', encoding='utf-8') as fin:
     arcs_rows.append(header_arcs)
     for row in reader:
         row=row[1:]
-        print(row)
+        # print(row)
         old_start = row[0].strip()
         old_end = row[1].strip()
         # Substitute using mapping if possible
@@ -84,3 +84,8 @@ with open(filosofi_file_new, 'w', newline='', encoding='utf-8') as fout:
     writer = csv.DictWriter(fout, fieldnames=fieldnames_f, delimiter=';')
     writer.writeheader()
     writer.writerows(filosofi_rows)
+
+os.remove(nodes_file)
+os.remove(arcs_file)
+os.remove(poi_file)
+os.remove(filosofi_file)
