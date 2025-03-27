@@ -718,9 +718,12 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
 
         // calculer le budget utilisé (à optimiser)
         double usedBudget = 0.0;
+        long int cpt_arcs_amenages = 0;
         for (size_t e = 0; e < nbEdges; e++) {
-            if (cplex.getValue(SB_var[e]) >= 0.5)
+            if (cplex.getValue(SB_var[e]) >= 0.5) {
                 usedBudget += graph->getGivenEdge(e)->get_edge_cost_1();
+                cpt_arcs_amenages++;
+            }
         }
         double budget_left = budget - usedBudget;
 
@@ -747,6 +750,7 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
         resFile << "modelBuildingTime" << ";" << modelBuildingTime << endl;
         resFile << "resolutionTime" << ";" << resolutionTime << endl;
         resFile << "objective_value" << ";" << cplex.getObjValue() << endl;
+        resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
 
         /*for (auto it = couple_idx_mapping.begin(); it != couple_idx_mapping.end(); it++)
         {
@@ -774,7 +778,6 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
         }    
         */
         resFile << "arc_to_improve" << "; " << endl;
-        long int cpt_arcs_amenages = 0;
         size_t e = 0;
         for (auto it = graph->getListOfEdges().begin(); it != graph->getListOfEdges().end(); it++)
         {
@@ -785,7 +788,6 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
             {
                 cout << "SB_e_" << ni << "_" << nj << " is improved" << endl;
                 resFile << ni << ";" << nj << endl;
-                cpt_arcs_amenages++;
             }
             e++;
         }
