@@ -9,7 +9,7 @@
 
 using namespace std;
 
-Graph* Parser::parse_nodes_and_edges_file(std::string pathNode, std::string pathEdges, char sep, string name, int nbVariante){
+Graph* Parser::parse_nodes_and_edges_file(std::string pathNode, std::string pathEdges, char sep, string name, int nbVariante, int LTS_TYPE){
     // Graph variables
     Graph* graph = new Graph();
     graph->setGraphName(name);
@@ -26,6 +26,7 @@ Graph* Parser::parse_nodes_and_edges_file(std::string pathNode, std::string path
 
 	long int nodeI, nodeJ;
 	double* costVariante = new double[2*nbVariante];
+    double LTS;
 
 	// Check of existence of file
 	nodesFile.open(pathNode, ios::in);
@@ -78,6 +79,21 @@ Graph* Parser::parse_nodes_and_edges_file(std::string pathNode, std::string path
             
         getline(ss, value, sep);
         costVariante[1] = atof(value.c_str()); // danger
+
+        if (LTS_TYPE == 1)
+        {
+            LTS = convertLTS(costVariante[0], costVariante[1]);
+        }
+        else
+        {
+            if (costVariante[0]!=0) {
+                LTS = costVariante[1] / costVariante[0]; // danger/distance
+            }
+            else {
+                LTS = std::numeric_limits<double>::infinity();
+            }
+        }
+        // cout << LTS << endl;
         
 
         /*
@@ -88,7 +104,7 @@ Graph* Parser::parse_nodes_and_edges_file(std::string pathNode, std::string path
 		}
         */
 		//if(!alreadyExists)
-        list_edges.push_back(Edge(idx_edge, nodeI, nodeJ, costVariante[0], costVariante[1]));
+        list_edges.push_back(Edge(idx_edge, nodeI, nodeJ, costVariante[0], costVariante[1],LTS));
         idx_edge++;
 	}
     cout << "populate succ and pred " << endl;
@@ -98,6 +114,30 @@ Graph* Parser::parse_nodes_and_edges_file(std::string pathNode, std::string path
 	delete [] costVariante;
 
     return graph;
+}
+
+// convertit pour avoir des valeurs lts similaires entre différents fichiers (sert pour faire des tests)
+double Parser::convertLTS(double distance, double danger) {
+    double lts=std::numeric_limits<float>::infinity();
+    float eps = 10e-2;
+    if (distance != 0) {
+        if (danger/distance < 1+eps){
+            lts=1;
+        }
+        else if (danger/distance < 1.15+eps)
+        {
+            lts=1.5;
+        }
+        else if (danger/distance < 1.3+eps)
+        {
+            lts=1.75;
+        }
+        else if (danger/distance < 1.15+eps)
+        {
+            lts=2;
+        } 
+    }
+    return lts;
 }
 
 Tiles* Parser::parse_filsofi_file(std::string path_filosofi, char sep)

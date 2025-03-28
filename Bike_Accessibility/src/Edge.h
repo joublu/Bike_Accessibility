@@ -17,13 +17,9 @@ private:
 	bool is_improved; // pour l'heuristique
 
 public:
-	Edge(long int _id, long int _id_1, long int _id_2, double _cost_1, double _cost_2, double _cost_a_1=0, double _cost_a_2=0) : edge_id(_id), node_id_1(_id_1), node_id_2(_id_2), edge_cost_1(_cost_1), edge_cost_2(_cost_2) , edge_cost_after_1(_cost_a_1), edge_cost_after_2(_cost_a_2){
-		
-		//Calcule du LTS > v�rification si un pb dans le fichier avce un arc � 0 de distance
-		if (edge_cost_1 != 0) LTS = edge_cost_2 / edge_cost_1;
-		else LTS = std::numeric_limits<double>::infinity();
-		//std::cout << "edge lts = " << LTS << std::endl;
-		
+	Edge(long int _id, long int _id_1, long int _id_2, double _cost_1, double _cost_2,  double _lts, double _cost_a_1=0, double _cost_a_2=0) : edge_id(_id), node_id_1(_id_1), node_id_2(_id_2), edge_cost_1(_cost_1), edge_cost_2(_cost_2), LTS(_lts), edge_cost_after_1(_cost_a_1), edge_cost_after_2(_cost_a_2){
+
+		// std::cout << "lts " << LTS << _lts << std::endl;
 		if (edge_cost_1 < 0) edge_cost_1 = 0;
 		if (edge_cost_2 < 0) edge_cost_2 = 0;
 
