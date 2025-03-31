@@ -337,13 +337,23 @@ void Graph::compute_reachable_edges_v3(Tile* currTile, float dist_limit)
 	reset_list_of_nodes(nodes_stack_to_reset);
 }
 
-void Graph::initialize_tiles_visibility_set(Tiles* carreaux, float dist_limit)
+void Graph::initialize_tiles_visibility_set_small_visibility(Tiles* carreaux, float dist_limit)
 {
 	reset_nodes();
 	int nbTiles = carreaux->getNbTiles();
 	for (int i = 0; i < nbTiles; i++)
 	{
 		this->compute_reachable_edges_v3(carreaux->getListeOfTiles()[i], dist_limit);
+	}
+}
+
+void Graph::initialize_tiles_visibility_set_exact(Tiles* carreaux, float dist_limit)
+{
+	reset_nodes();
+	int nbTiles = carreaux->getNbTiles();
+	for (int i = 0; i < nbTiles; i++)
+	{
+		this->compute_reachable_edges_v4(carreaux->getListeOfTiles()[i], dist_limit);
 	}
 }
 

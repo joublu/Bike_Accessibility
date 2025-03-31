@@ -30,28 +30,26 @@ using namespace std;
 //     float LTS_max = 1.;
 
 //     int model = 0;
-//     // cout << "choose model (0 -> cplex, 1 -> PCC heuristic, 2 -> PCC heuristic filling the budget)" << endl;
+//     // cout << "choose model (0 -> cplex visibilité v4 (exact), 1 -> cplex visibilité v3, 2 -> PCC heuristic, 3 -> PCC heuristic filling the budget)" << endl;
 //     // cin >> model;
 
 //     if (model == 0) {
-//         Tours->initialize_tiles_visibility_set(carreaux, dmax);
+//         Tours->initialize_tiles_visibility_set_exact(carreaux, dmax);
 //         myParser.parse_POI_file(dirPath + "/Data_BA/" + instance_name + "_poi.csv", ';', carreaux, Tours);
 //         cout << "nb POI = " << carreaux->getNbPoi() << endl;
 //         carreaux->initialize_reachable_poi_v2();
-//         //carreaux->display_carreaux_data();
 //         ModelCplex_BA* cplex_model = new ModelCplex_BA(Tours, carreaux, budget, LTS_max, dmax);
-//         cplex_model->solveModel(true, false, false);
-
-//         /*cplex_model->changeC13Constraints(1);
-//         cplex_model->solveModel(true, false, false);
-//         */
-
-//         /*cplex_model->changeBudgetConstraint(20);
-//         cplex_model->solveModel(true, false, false);
-//         cplex_model->changeBudgetConstraint(0);
-//         cplex_model->solveModel(true, false, false);*/
+//         cplex_model->solveModelExact(true, false, false);
 //     }
 //     else if (model == 1) {
+//         Tours->initialize_tiles_visibility_set_small_visibility(carreaux, dmax);
+//         myParser.parse_POI_file(dirPath + "/Data_BA/" + instance_name + "_poi.csv", ';', carreaux, Tours);
+//         cout << "nb POI = " << carreaux->getNbPoi() << endl;
+//         carreaux->initialize_reachable_poi_v2();
+//         ModelCplex_BA* cplex_model = new ModelCplex_BA(Tours, carreaux, budget, LTS_max, dmax);
+//         cplex_model->solveModelSmallVisibility(true, false, false);
+//     }
+//     else if (model == 2) {
 //         Tours->initialize_tiles_visibility_set_h(carreaux, dmax, LTS_max);
 //         myParser.parse_POI_file(dirPath + "/Data_BA/" + instance_name + "_poi.csv", ';', carreaux, Tours);
 //         cout << "nb POI = " << carreaux->getNbPoi() << endl;
@@ -59,9 +57,8 @@ using namespace std;
 
 //         HeuristicPCC* pcc_model = new HeuristicPCC(Tours, carreaux, budget, LTS_max, dmax);
 //         pcc_model->solveModel();
-
 //     }
-//     else if (model==2) {
+//     else if (model==3) {
 //         Tours->initialize_tiles_visibility_set_h(carreaux, dmax, LTS_max);
 //         myParser.parse_POI_file(dirPath + "/Data_BA/" + instance_name + "_poi.csv", ';', carreaux, Tours);
 //         cout << "nb POI = " << carreaux->getNbPoi() << endl;
@@ -123,19 +120,35 @@ int main()
         cout << "Running instance with: dmax = " << dmax << ", budget = " << budget << ", LTS_max = " << LTS_max << endl;
 
 
-        // CPLEX
+        // CPLEX exact (v4)
+        cout << "Running CPLEX exact (v4)" << endl;
         Tours = myParser.parse_nodes_and_edges_file(dirPath + "/Data_BA/" + instance_name + "_noeuds.csv", dirPath + "/Data_BA/" + instance_name + "_arcs.csv" , ';', instance_name, 1, LTS_TYPE);
         cout << " nb nodes = " << Tours->getNbNodes() << " nb edges = " << Tours->getNbEdges() << std::endl;
         carreaux = myParser.parse_filsofi_file(dirPath + "/Data_BA/" + instance_name + "_filosofi.csv", ';');
         cout << "nb carreaux = " << carreaux->getNbTiles() << endl;
-        Tours->initialize_tiles_visibility_set(carreaux, dmax);
+        Tours->initialize_tiles_visibility_set_exact(carreaux, dmax);
         myParser.parse_POI_file(dirPath + "/Data_BA/" + instance_name + "_poi.csv", ';', carreaux, Tours);
         cout << "nb POI = " << carreaux->getNbPoi() << endl;
         carreaux->initialize_reachable_poi_v2();
 
         ModelCplex_BA* cplex_model = new ModelCplex_BA(Tours, carreaux, budget, LTS_max, dmax);
-        cplex_model->solveModel(true, false, false);
+        cplex_model->solveModelExact(true, false, false);
         delete cplex_model;
+
+        // CPLEX small visibility (v3)
+        cout << "Running CPLEX small visibility model (v3)" << endl;
+        Tours = myParser.parse_nodes_and_edges_file(dirPath + "/Data_BA/" + instance_name + "_noeuds.csv", dirPath + "/Data_BA/" + instance_name + "_arcs.csv" , ';', instance_name, 1, LTS_TYPE);
+        cout << " nb nodes = " << Tours->getNbNodes() << " nb edges = " << Tours->getNbEdges() << std::endl;
+        carreaux = myParser.parse_filsofi_file(dirPath + "/Data_BA/" + instance_name + "_filosofi.csv", ';');
+        cout << "nb carreaux = " << carreaux->getNbTiles() << endl;
+        Tours->initialize_tiles_visibility_set_small_visibility(carreaux, dmax);
+        myParser.parse_POI_file(dirPath + "/Data_BA/" + instance_name + "_poi.csv", ';', carreaux, Tours);
+        cout << "nb POI = " << carreaux->getNbPoi() << endl;
+        carreaux->initialize_reachable_poi_v2();
+
+        ModelCplex_BA* cplex_model2 = new ModelCplex_BA(Tours, carreaux, budget, LTS_max, dmax);
+        cplex_model2->solveModelSmallVisibility(true, false, false);
+        delete cplex_model2;
 
 
         // Heuristic PCC

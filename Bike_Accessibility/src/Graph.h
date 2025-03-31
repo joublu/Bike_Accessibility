@@ -77,7 +77,8 @@ public:
 	void compute_reachable_edges_v2(Tile* currTile, float dist_limit);
 	void compute_reachable_edges_v3(Tile* currTile, float dist_limit);
 	void compute_reachable_edges_v4(Tile* currTile, float dist_limit);
-	void initialize_tiles_visibility_set(Tiles* carreaux, float dist);
+	void initialize_tiles_visibility_set_small_visibility(Tiles* carreaux, float dist);
+	void initialize_tiles_visibility_set_exact(Tiles* carreaux, float dist);
 	void compute_reachable_edges_h(Tile* currTile, float dist_limit, float lts_max);
 	void initialize_tiles_visibility_set_h(Tiles* carreaux, float dist, float lts_max);
 };

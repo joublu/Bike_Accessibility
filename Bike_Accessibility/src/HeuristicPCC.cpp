@@ -360,6 +360,9 @@ void HeuristicPCC::solveModelFillBudget()
 {
     cout << "enter solve fill budget" << endl;
 
+    int ov_avant = graph->compute_objective(carreaux, LTS_max, distance_max);
+    cout << "objective_value with Graph::compute_objective() AVANT SOLVE = " << ov_avant << endl;
+
     resolutionTime = 0;
     clock_t start, finish;
     start=clock();
@@ -371,6 +374,7 @@ void HeuristicPCC::solveModelFillBudget()
     cout << "Temps de résolution: " << resolutionTime << endl;
     cout << "Solution value  = " << ppoi_barre << endl;
     cout << "solution value for pccs = " << compute_objective_with_pccs() << endl;
+    cout << "objective_value with Graph::compute_objective()" << ";" << graph->compute_objective(carreaux, LTS_max, distance_max) << endl;
 
     std::ofstream resFile;
     resFile.open(createFileNameFillBudget(), ios::out);
@@ -401,6 +405,7 @@ void HeuristicPCC::solveModelFillBudget()
     resFile << "nbTiles" << ";" << carreaux->getNbTiles() << endl;
     resFile << "nbPoi" << ";" << carreaux->getNbPoi() << endl;
     resFile << "nbPoiTileCouple" << ";" << carreaux->getNbPpoiTileCouple() << endl;
+    resFile << "objective_value AVANT SOLVE with Graph::compute_objective()" << ";" << ov_avant << endl;
 
     resFile << "budget" << ";" << budget << endl;
     resFile << "budget_left" << ";" << budget_left << endl;
@@ -410,6 +415,7 @@ void HeuristicPCC::solveModelFillBudget()
     resFile << "modelBuildingTime" << ";" << modelBuildingTime << endl;
     resFile << "resolutionTime" << ";" << resolutionTime << endl;
     resFile << "objective_value" << ";" << ppoi_barre << endl;
+    resFile << "objective_value with Graph::compute_objective()" << ";" << graph->compute_objective(carreaux, LTS_max, distance_max) << endl;
     resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
 
     resFile << "arc_to_improve" << "; " << endl;

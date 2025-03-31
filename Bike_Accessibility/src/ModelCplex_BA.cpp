@@ -673,7 +673,7 @@ void ModelCplex_BA::createObjectiveOnDistance()
     model.add(objectiveVariable);
 }
 
-void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSolve) {
+void ModelCplex_BA::solveModelExact(bool affichage, bool needExport, bool setOffPreSolve) {
 
     cout << "\t- Call solve model " << endl;
     cout << "enter solve" << endl;
@@ -711,7 +711,7 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
         env.out() << "Solution value  = " << cplex.getObjValue() << endl;
 
         std::ofstream resFile;
-        resFile.open(createFileName(), ios::out);
+        resFile.open(createFileNameExact(), ios::out);
         if ( !resFile.is_open())
         {
             std::cout << "error opening results file" << endl;
@@ -809,6 +809,98 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
    
 }
 
+void ModelCplex_BA::solveModelSmallVisibility(bool affichage, bool needExport, bool setOffPreSolve) {
+
+    cout << "\t- Call solve model " << endl;
+    cout << "enter solve" << endl;
+    int ov_avant = graph->compute_objective(carreaux, LTS_max, distance_max);
+    cout << "objective_value with Graph::compute_objective() AVANT SOLVE = " << ov_avant << endl;
+    cplex.extract(model);
+
+    if (!affichage)
+        cplex.setOut(env.getNullStream());
+    else
+        cout << endl;
+
+    if (setOffPreSolve)
+         cplex.setParam(IloCplex::Param::Preprocessing::Presolve, false);
+
+    cout << "begin to solve" << endl;
+
+    resolutionTime = 0;
+    double startTime = cplex.getCplexTime();
+    cplex.setParam(IloCplex::Param::TimeLimit, 36000);
+    bool res = cplex.solve();
+    double stopTime = cplex.getCplexTime();
+    resolutionTime = stopTime - startTime;
+    cout << "Temps de r�solution: " << resolutionTime << endl;
+
+    if (res) {
+        env.out() << "Solution value  = " << cplex.getObjValue() << endl;
+
+        std::ofstream resFile;
+        resFile.open(createFileNameSmallVisibility(), ios::out);
+        if ( !resFile.is_open())
+        {
+            std::cout << "error opening results file" << endl;
+            return;
+        }
+
+        double usedBudget = 0.0;
+        long int cpt_arcs_amenages = 0;
+        for (size_t e = 0; e < nbEdges; e++) {
+            if (cplex.getValue(SB_var[e]) >= 0.5) {
+                usedBudget += graph->getGivenEdge(e)->get_edge_cost_1();
+                cpt_arcs_amenages++;
+
+                Edge* edge_ptr = graph->getGivenEdge(e);
+                edge_ptr->set_is_improved(true);
+            }
+        }
+        double budget_left = budget - usedBudget;
+
+        std::ofstream GLOBALResFile;
+        GLOBALResFile.open("./Results/global.csv", ios::app);
+
+        resFile << "graph_name" << ";" << graph->getGraphName() << endl;
+        resFile << "nbTiles" << ";" << carreaux->getNbTiles() << endl;
+        resFile << "nbPoi" << ";" << carreaux->getNbPoi() << endl;
+        resFile << "nbPoiTileCouple" << ";" << carreaux->getNbPpoiTileCouple() << endl;
+        resFile << "objective_value AVANT SOLVE with Graph::compute_objective()" << ";" << ov_avant << endl;
+
+        resFile << "budget" << ";" << budget << endl;
+        resFile << "budget_left" << ";" << budget_left << endl;
+        resFile << "LTS_max" << ";" << LTS_max << endl;
+        resFile << "distance_max" << ";" << distance_max << endl;
+
+        resFile << "modelBuildingTime" << ";" << modelBuildingTime << endl;
+        resFile << "resolutionTime" << ";" << resolutionTime << endl;
+        resFile << "objective_value" << ";" << cplex.getObjValue() << endl;
+        resFile << "objective_value with Graph::compute_objective()" << ";" << graph->compute_objective(carreaux, LTS_max, distance_max) << endl;
+        resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
+
+        resFile << "arc_to_improve" << "; " << endl;
+        size_t e = 0;
+        for (auto it = graph->getListOfEdges().begin(); it != graph->getListOfEdges().end(); it++)
+        {
+            
+            int ni = it->get_node_id_1();
+            int nj = it->get_node_id_2();
+            if (cplex.getValue(SB_var[e]) >= 0.5)
+            {
+                cout << "SB_e_" << ni << "_" << nj << " is improved" << endl;
+                resFile << ni << ";" << nj << endl;
+            }
+            e++;
+        }
+    }
+    else
+    {
+        cout << " no solution " << endl;
+    }
+   
+}
+
 void ModelCplex_BA::createBudgetConstraint()
 {
     cout << "enter  createBudgetConstraint" << endl;
@@ -898,16 +990,33 @@ void ModelCplex_BA::changeC13Constraints(double newLTSmax)
 }
 
 
-
-
-
-
-
-
-string ModelCplex_BA::createFileName()
+string ModelCplex_BA::createFileNameExact()
 {
     string filename = "./Results/";
-    filename += graph->getGraphName() + "_ME_";
+    filename += graph->getGraphName() + "_ME_v4_";
+
+    std::string stringBudget = std::to_string(budget);
+    stringBudget = stringBudget.substr(0, stringBudget.find('.'));
+
+    std::string stringLTS = std::to_string(LTS_max);
+    stringLTS = stringLTS.substr(0, stringLTS.find('.') + 3);
+    
+    std::string stringDmax = std::to_string(distance_max);
+    stringDmax = stringDmax.substr(0, stringLTS.find('.') + 3);
+
+
+    filename += "Budget_" + stringBudget;
+    filename += "_LTSmax_" + stringLTS;
+    filename += "_Dmax_" + stringDmax;
+    filename += ".csv";
+    std::cout << "filename = " << filename << endl;
+    return filename;
+}
+
+string ModelCplex_BA::createFileNameSmallVisibility()
+{
+    string filename = "./Results/";
+    filename += graph->getGraphName() + "_ME_v3_";
 
     std::string stringBudget = std::to_string(budget);
     stringBudget = stringBudget.substr(0, stringBudget.find('.'));

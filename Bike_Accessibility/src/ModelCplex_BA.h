@@ -126,7 +126,8 @@ public:
 	void generate_constraints();
 	void createObjective();
 	void createObjectiveOnDistance();
-	void solveModel(bool affichage, bool needExport, bool setOffPreSolve);
+	void solveModelSmallVisibility(bool affichage, bool needExport, bool setOffPreSolve);
+	void solveModelExact(bool affichage, bool needExport, bool setOffPreSolve);
 
 	void createBudgetConstraint();
 	void changeBudgetConstraint( float _newBudget);
@@ -134,6 +135,7 @@ public:
 	void changeC13Constraints(double newLTSmax);
 
 
-	string createFileName();
+	string createFileNameSmallVisibility();
+	string createFileNameExact();
 };
 
