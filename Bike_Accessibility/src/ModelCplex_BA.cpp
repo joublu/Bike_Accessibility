@@ -677,6 +677,8 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
 
     cout << "\t- Call solve model " << endl;
     cout << "enter solve" << endl;
+    int ov_avant = graph->compute_objective(carreaux, LTS_max, distance_max);
+    cout << "objective_value with Graph::compute_objective() AVANT SOLVE = " << ov_avant << endl;
     cplex.extract(model);
     //cplex.setParam(IloCplex::Param::Threads, 1);    
     //cplex.setParam(IloCplex::Param::MIP::Tolerances::Integrality, 0.0001);
@@ -723,6 +725,10 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
             if (cplex.getValue(SB_var[e]) >= 0.5) {
                 usedBudget += graph->getGivenEdge(e)->get_edge_cost_1();
                 cpt_arcs_amenages++;
+
+                // pour calculer l'objective value avec Graph::compute_objective()
+                Edge* edge_ptr = graph->getGivenEdge(e);
+                edge_ptr->set_is_improved(true);
             }
         }
         double budget_left = budget - usedBudget;
@@ -741,6 +747,7 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
         resFile << "nbTiles" << ";" << carreaux->getNbTiles() << endl;
         resFile << "nbPoi" << ";" << carreaux->getNbPoi() << endl;
         resFile << "nbPoiTileCouple" << ";" << carreaux->getNbPpoiTileCouple() << endl;
+        resFile << "objective_value AVANT SOLVE with Graph::compute_objective()" << ";" << ov_avant << endl;
 
         resFile << "budget" << ";" << budget << endl;
         resFile << "budget_left" << ";" << budget_left << endl;
@@ -750,6 +757,7 @@ void ModelCplex_BA::solveModel(bool affichage, bool needExport, bool setOffPreSo
         resFile << "modelBuildingTime" << ";" << modelBuildingTime << endl;
         resFile << "resolutionTime" << ";" << resolutionTime << endl;
         resFile << "objective_value" << ";" << cplex.getObjValue() << endl;
+        resFile << "objective_value with Graph::compute_objective()" << ";" << graph->compute_objective(carreaux, LTS_max, distance_max) << endl;
         resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
 
         /*for (auto it = couple_idx_mapping.begin(); it != couple_idx_mapping.end(); it++)

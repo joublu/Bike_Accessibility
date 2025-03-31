@@ -430,7 +430,7 @@ int Graph::compute_objective(Tiles* carreaux, double lts_max, float dist_limit)
         {
             PPOI_var++; // le ppoi est visible
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
-            if (this->doSecurePathExists(z, poi_ptr->getPoiNode(), lts_max, dist_limit))
+            if (this->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), lts_max, dist_limit))
             {
                 PPOI_var--; // le ppoi est atteint
             }
