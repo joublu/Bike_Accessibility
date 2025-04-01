@@ -449,8 +449,6 @@ int Graph::compute_objective(Tiles* carreaux, double lts_max, float dist_limit)
     return PPOI_var;
 }
 
-// a revoir pcq tous les chemins ne sont pas pris en compte
-// on a le pb de l'arbre aussi (?)
 bool Graph::doSecurePathExists(long int start, long int end, double lts_max, double dist_limit)
 {
 	if (start==end)	return true;
@@ -486,7 +484,7 @@ bool Graph::doSecurePathExists(long int start, long int end, double lts_max, dou
 			// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
 			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
-			if ((curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
+			if (curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) // && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
 			{
 				// on considère l'edge ssi on peut l'utiliser
 				if ((curr_edge->get_edge_LTS() <= lts_max || curr_edge->get_is_improved()))
@@ -497,7 +495,10 @@ bool Graph::doSecurePathExists(long int start, long int end, double lts_max, dou
 						break;
 					}
 					// Mise � jour du nouveau label distance pour ce voisi
-					tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+					if (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist())
+					{
+						tmp_ptr_node->setDistance(curr_dist + curr_edge->get_edge_cost_1());
+					}
 					//Ajout du voisin dans la liste � explorer si pas deja present
 					if (tmp_ptr_node->getIsVisited() == false)
 					{
