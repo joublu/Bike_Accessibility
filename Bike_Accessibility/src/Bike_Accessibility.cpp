@@ -9,6 +9,16 @@
 
 using namespace std;
 
+/**
+ * Le main produit des fichiers csv se trouvant dans ../Results
+ * Si le nom du fichier comporte ME_v4, c'est le modèle exact
+ * Si le nom du fichier comporte ME_v3, c'est le modèle exact sur une visibilité réduite
+ * Si le nom du fichier comporte heurtistique_HB, c'est le modèle heuristique ou le budget 
+ * est dépensé au maximum
+ * Si le nom du fichier comporte heurtistique, c'est le modèle heuristique où l'on s'arrête
+ * dès qu'une arête est trop grosse pour être aménagée
+ */
+
 // // MAIN FOR LOCAL TESTS
 // int main()
 // {
@@ -111,7 +121,6 @@ int main()
         {500, 20, 1.5},
 	};
 
-    // for each tuple, solve the model for the 3 different methods.
     for (auto params : paramSet)
     {
         dmax   = params.dmax;
