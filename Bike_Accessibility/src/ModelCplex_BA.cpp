@@ -102,6 +102,7 @@ ModelCplex_BA::ModelCplex_BA(Graph* _g, Tiles* _t, float _b, double _ltsmax, flo
     this->generate_variables_model_v2();
     cout << "\t- Generation de l'objectif " << endl;
     this->createObjective();
+    // this->createObjectiveOnPopulation();
    // this->createObjectiveOnDistance();
     cout << "\t- Generation des contraintes " << endl;
     this->generate_constraints();
@@ -658,6 +659,20 @@ void ModelCplex_BA::createObjective()
     objectiveExpr = IloExpr(env);
     for (size_t c = 0; c < couple_map_size; c++) {
         objectiveExpr += PPOI_var[c];
+    }
+    objectiveVariable = IloMinimize(env, objectiveExpr);
+    model.add(objectiveVariable);
+}
+
+void ModelCplex_BA::createObjectiveOnPopulation() 
+{
+    objectiveExpr = IloExpr(env);
+    size_t c = 0;
+    for (auto it = couple_idx_mapping.begin(); it != couple_idx_mapping.end(); it++)
+    {
+        long int wz = it->first.tile->getTilePopulation();
+        objectiveExpr += PPOI_var[c]* (IloNum)wz;
+        c++;
     }
     objectiveVariable = IloMinimize(env, objectiveExpr);
     model.add(objectiveVariable);

@@ -251,6 +251,26 @@ void HeuristicPCC::compute_objective()
     }
 }
 
+void HeuristicPCC::compute_objective_population()
+{
+    ppoi_barre = 0;
+    for (int z = 0; z < carreaux->getNbTiles(); z++)
+    {
+        Tile* curr_tile = carreaux->getListeOfTiles()[z];
+        long int wz = curr_tile->getTilePopulation();
+        int PPOI_visible = curr_tile->getPotentialPoi().size();
+        for (int p = 0; p < PPOI_visible; p++)
+        {
+            ppoi_barre+=wz; // le ppoi est visible
+            POI* poi_ptr = curr_tile->getPotentialPoi()[p];
+            if (graph->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)) // voir direction
+            {
+                ppoi_barre-=wz; // le ppoi est atteint
+            }
+        }
+    }
+}
+
 // cette méthode se base seulement sur les pcc, mais il pourrait y avoir un autre chemin
 int HeuristicPCC::compute_objective_with_pccs()
 {
@@ -290,12 +310,12 @@ void HeuristicPCC::solveModel()
     start=clock();
     find_edges_to_change(); // heuristique 
     compute_objective(); // calcul de la solution value (ppoi_barre)
+    // compute_objective_population();
     finish=clock();
     resolutionTime = (double)(finish - start) / CLOCKS_PER_SEC;
 
     cout << "Temps de résolution: " << resolutionTime << endl;
     cout << "Solution value  = " << ppoi_barre << endl;
-    cout << "solution value for pccs = " << compute_objective_with_pccs() << endl;
     cout << "objective_value with Graph::compute_objective()" << ";" << graph->compute_objective(carreaux, LTS_max, distance_max) << endl;
 
     std::ofstream resFile;

@@ -35,6 +35,7 @@ public:
 
 	// int compute_objective();
 	void compute_objective();
+	void compute_objective_population();
 	// void compute_objective_with_pccs();
 	int compute_objective_with_pccs();
 	void solveModel();

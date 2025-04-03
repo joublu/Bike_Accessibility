@@ -125,6 +125,7 @@ public:
 	void generate_variables_model();
 	void generate_constraints();
 	void createObjective();
+	void createObjectiveOnPopulation();
 	void createObjectiveOnDistance();
 	void solveModelSmallVisibility(bool affichage, bool needExport, bool setOffPreSolve);
 	void solveModelExact(bool affichage, bool needExport, bool setOffPreSolve);
