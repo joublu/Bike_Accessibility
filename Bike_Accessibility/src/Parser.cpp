@@ -132,7 +132,7 @@ double Parser::convertLTS(double distance, double danger) {
         {
             lts=1.75;
         }
-        else if (danger/distance < 1.15+eps)
+        else
         {
             lts=2;
         } 
