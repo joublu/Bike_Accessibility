@@ -2,15 +2,13 @@ import os
 import csv
 from tabulate import tabulate
 
-folder = "Bike_Accessibility/Results/Results_after_fixDSPE"
-dataset="100N_1_reindexed"
+folder = "Bike_Accessibility/Results"
+dataset="19N_1_reindexed_reindexed"
 raw_table = []
 
 for filename in os.listdir(folder):
-    # if (filename.startswith(dataset) and filename.endswith("_v4.csv")) or filename.startswith(f"{dataset}_heuristique"):
     if (filename.startswith(dataset)):
         fullpath = os.path.join(folder, filename)
-        # version = "v4" if f"{dataset}_ME_v4" in filename else "v3"
 
         if f"{dataset}_heuristique_HB" in filename:
             version="hb"
@@ -79,14 +77,16 @@ for row in raw_table:
 final_table = []
 # headers = ["B", "dmax", "lts", "#ppoi\nME","#ppoi\nH","#improved\nedges ME","#improved\nedges H","budget\nleft ME","budget\nleft H", "Obj Val\nME","Obj val\nH","reached\nPOI ME", "reached\nPOI H", "EFFICIENCY", "time\nME", "Time\nH", "TIME\nSAVED"]
 # headers = ["B", "dmax", "lts", "#ppoi\nv4","#ppoi\nv3","#improved\nedges v4","#improved\nedges v3","budget\nleft v4","budget\nleft v3", "Obj Val\nv4","Obj val\nv3","reached\nPOI v4", "reached\nPOI H", "EFFICIENCY", "time\nv4", "Time\nv3", "TIME\nSAVED"]
-headers = ["B", "dmax", "lts", "#ppoi", "Obj val\ninitiale", "Obj Val\ncplex v4","Obj val\ncplex v3","Obj Val\nDSPE v4","Obj val\nDSPE v3","reached\nPOI v4", "reached\nPOI v3", "EFFICIENCY\ncplex", "EFFICIENCY\nDSPE", "time\nv4", "Time\nv3", "TIME\nSAVED"]
-# headers = ["B", "dmax", "lts", "#ppoi", "OVini", "budget\nleft ME","budget\nleft h", "Obj Val\nME","Obj val\nh","OVG\nME","OVG\nh","reached\nPOI ME", "reached\nPOI H", "EFF", "EFF_G", "time\nME", "Time\nH", "TIME\nSAVED"]
+# headers = ["B", "dmax", "lts", "#ppoi", "Obj Val\ncplex v4","Obj val\ncplex v3","Obj Val\nDSPE v4","Obj val\nDSPE v3","reached\nPOI v4", "reached\nPOI v3", "EFFICIENCY\ncplex", "EFFICIENCY\nDSPE", "time\nv4", "Time\nv3", "TIME\nSAVED"]
+# headers = ["B", "dmax", "lts", "#ppoi", "budget\nleft ME","budget\nleft h", "Obj Val\ncplex ME","Obj val\ncplex h","Obj Val\nDSPE ME","Obj val\nDSPE h","reached\nPOI ME", "reached\nPOI H", "EFFICIENCY\ncplex", "EFFICIENCY\nDSPE", "time\nME", "Time\nH", "TIME\nSAVED"]
+headers = ["B", "dmax", "lts", "#ppoi", "budget\nleft h1","budget\nleft h2", "Obj Val\ncplex h1","Obj val\ncplex h2","Obj Val\nDSPE h1","Obj val\nDSPE h2","reached\nPOI h1", "reached\nPOI h2", "EFFICIENCY\ncplex", "EFFICIENCY\nDSPE", "time\nh1", "Time\nh2", "TIME\nSAVED"]
+
 
 for key, versions in groups.items():
     # Only add a row if we have all versions needed:
-    if "v4" in versions and "v3" in versions:
+    if "h" in versions and "v4" in versions:
         row_exact = versions["v4"]
-        row_heur  = versions["v3"]
+        row_heur  = versions["h"]
 
         try:
             res_exact = float(row_exact[4]) + float(row_exact[7])
@@ -95,8 +95,12 @@ for key, versions in groups.items():
         except Exception as e:
             gain_temps = None
 
+        reached_poi_exact = float(row_exact[5]) - float(row_exact[6])
+        reached_poi_heur = float(row_heur[5]) - float(row_heur[6])
+
         try :
-            efficacite = (float(row_exact[5])-float(row_heur[6]))/(float(row_exact[5])-float(row_exact[6]))*100
+            # efficacite = (float(row_exact[5])-float(row_heur[6]))/(float(row_exact[5])-float(row_exact[6]))*100
+            efficacite = (reached_poi_heur) / (reached_poi_exact) * 100
         except Exception as e:
             efficacite = None
 
@@ -110,17 +114,13 @@ for key, versions in groups.items():
             row_exact[2], # dmax
             row_exact[3], # lts
             row_exact[5], # nb ppoi exact
-            # row_heur[5], # nb ppoi heur
-            row_exact[10], # OV ini
-            # row_exact[8], # arc count exact
-            # row_heur[8], # arc count heur
-            # row_exact[9], # budget left exact
-            # row_heur[9], # budget left heur
+            row_exact[9], # budget left exact
+            row_heur[9], # budget left heur
             int(float(row_exact[6])), # obj exact
             int(float(row_heur[6])), # obj heur
             int(float(row_exact[11])), # obj exact Graph::compute_objective
             int(float(row_heur[11])), # obj heur Graph::compute_objective
-            float(row_exact[5])-float(row_exact[6]), # nb ppoi exact - obj exact
+            float(row_exact[5])-float(row_exact[6]), # nb ppoi exact - obj exact (reached ppoi)
             float(row_heur[5])-float(row_heur[6]), # nb ppoi heurs -obj heur
             efficacite,
             efficacite2,
@@ -133,7 +133,9 @@ for key, versions in groups.items():
 
 print()
 print("table for dataset = ", dataset)
-print("model cplex exact = v4, model cplex visibilite reduite = v3")
+# print("model cplex = v4 (visibilité exacte) et heuristique, DSPE = dijsktra et arrêt dès qu'un chemin sécurisé est trouvé") # avec parcourt complet du graphe")
+# print("modèle cplex = v4 (visibilité complète) et modèle cplex = v3 (visibilité réduite), DSPE = dijsktra et arrêt dès qu'un chemin sécurisé est trouvé")
+# print("heuristiques h1 et h2, DSPE = dijsktra et arrêt dès qu'un chemin sécurisé est trouvé")
 print()
 print(tabulate(final_table, headers=headers))
 print()

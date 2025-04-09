@@ -5,7 +5,7 @@ import os
 import csv
 
 base_dir = "Bike_Accessibility/Data_BA/"
-dataset="100N_1"
+dataset="19N_1_reindexed"
 nodes_file = os.path.join(base_dir, f"{dataset}_noeuds.csv")
 arcs_file = os.path.join(base_dir, f"{dataset}_arcs.csv")
 poi_file = os.path.join(base_dir, f"{dataset}_poi.csv")
@@ -45,7 +45,7 @@ with open(arcs_file, newline='', encoding='utf-8') as fin:
     header_arcs = next(reader)  # header row
     arcs_rows.append(header_arcs)
     for row in reader:
-        row=row[1:]
+        # row=row[1:] # commenter si instance de felix
         # print(row)
         old_start = row[0].strip()
         old_end = row[1].strip()
@@ -85,7 +85,7 @@ with open(filosofi_file_new, 'w', newline='', encoding='utf-8') as fout:
     writer.writeheader()
     writer.writerows(filosofi_rows)
 
-os.remove(nodes_file)
-os.remove(arcs_file)
-os.remove(poi_file)
-os.remove(filosofi_file)
+# os.remove(nodes_file)
+# os.remove(arcs_file)
+# os.remove(poi_file)
+# os.remove(filosofi_file)
