@@ -1,4 +1,5 @@
 #include "ModelCplex_BA.h"
+#include <fstream>
 
 
 /*std::unordered_map<key_type, size_t> idx_mapping;
@@ -723,6 +724,55 @@ void ModelCplex_BA::createObjective()
     model.add(objectiveVariable);
 }
 
+void ModelCplex_BA::printVisiblePPOI() 
+{
+    cout << " ModelCplex_BA::printVisiblePPOI() " << endl;
+    for (auto it = couple_idx_mapping.begin(); it != couple_idx_mapping.end(); it++)
+    {
+        if (cplex.getValue(PPOI_var[it->second]) >= 0.5) {
+            int z = it->first.tile->getIdcentralNode();
+            int p = it->first.poi->getPoiNode(); 
+            cout << "tile " << z << "; POI " << p << endl;
+        }
+    }
+    cout << endl;
+}
+
+void ModelCplex_BA::printVisiblePPOIToFile(const std::string& filename1, const std::string& filename2)
+{
+    std::ofstream outFile(filename1);
+    if (!outFile.is_open())
+    {
+        std::cerr << "Error opening file " << filename1 << std::endl;
+        return;
+    }
+
+    std::streambuf* oldCoutBuf = std::cout.rdbuf();
+    std::cout.rdbuf(outFile.rdbuf());
+
+    printVisiblePPOI();
+
+    std::cout.rdbuf(oldCoutBuf);
+    outFile.close();
+
+    /***** */
+
+    std::ofstream outFile2(filename2);
+    if (!outFile2.is_open())
+    {
+        std::cerr << "Error opening file " << filename2 << std::endl;
+        return;
+    }
+
+    std::streambuf* oldCoutBuf2 = std::cout.rdbuf();
+    std::cout.rdbuf(outFile2.rdbuf());
+
+    graph->printVisiblePPOI(carreaux, LTS_max, distance_max);
+
+    std::cout.rdbuf(oldCoutBuf2);
+    outFile2.close();
+}
+
 void ModelCplex_BA::createObjectiveOnPopulation() 
 {
     objectiveExpr = IloExpr(env);
@@ -755,8 +805,8 @@ void ModelCplex_BA::solveModelExact(bool affichage, bool needExport, bool setOff
     cout << "objective_value with Graph::compute_objective() AVANT SOLVE = " << ov_avant << endl;
     cplex.extract(model);
     //cplex.setParam(IloCplex::Param::Threads, 1);    
-    //cplex.setParam(IloCplex::Param::MIP::Tolerances::Integrality, 0.0001);
-    //cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 0.00001);
+    cplex.setParam(IloCplex::Param::MIP::Tolerances::Integrality, 0);
+    cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 0);
     //cplex.exportModel("esay.lp");
 
     if (!affichage)// Block output on console
@@ -802,10 +852,17 @@ void ModelCplex_BA::solveModelExact(bool affichage, bool needExport, bool setOff
 
                 // pour calculer l'objective value avec Graph::compute_objective()
                 Edge* edge_ptr = graph->getGivenEdge(e);
+                int ni = edge_ptr->get_node_id_1();
+                int nj = edge_ptr->get_node_id_2();
+                cout << "SB_e_" << ni << "_" << nj << " is improved" << endl;
                 edge_ptr->set_is_improved(true);
             }
         }
         double budget_left = budget - usedBudget;
+
+        // const std::string& filename1 = "./Results/visiblePPOICplex.csv";
+        // const std::string& filename2 = "./Results/visiblePPOIGraph.csv";
+        // printVisiblePPOIToFile(filename1, filename2);
 
         std::ofstream GLOBALResFile;
         GLOBALResFile.open("./Results/global.csv", ios::app); // revoir nom pr qu'il soit unique etc (sinn ça pose des erreurs à l'execution)
@@ -928,10 +985,18 @@ void ModelCplex_BA::solveModelSmallVisibility(bool affichage, bool needExport, b
                 cpt_arcs_amenages++;
 
                 Edge* edge_ptr = graph->getGivenEdge(e);
+                // // gives the same thing
+                // int ni = edge_ptr->get_node_id_1();
+                // int nj = edge_ptr->get_node_id_2();
+                // cout << "SB_e_" << ni << "_" << nj << " is improved" << endl;
                 edge_ptr->set_is_improved(true);
             }
         }
         double budget_left = budget - usedBudget;
+
+        // const std::string& filename1 = "./Results/visiblePPOICplex.csv";
+        // const std::string& filename2 = "./Results/visiblePPOIGraph.csv";
+        // printVisiblePPOIToFile(filename1, filename2);
 
         std::ofstream GLOBALResFile;
         GLOBALResFile.open("./Results/global.csv", ios::app);
@@ -952,6 +1017,31 @@ void ModelCplex_BA::solveModelSmallVisibility(bool affichage, bool needExport, b
         resFile << "objective_value" << ";" << cplex.getObjValue() << endl;
         resFile << "objective_value with Graph::compute_objective()" << ";" << graph->compute_objective(carreaux, LTS_max, distance_max) << endl;
         resFile << "#arcs amenages" << ";" << cpt_arcs_amenages << endl;
+
+        /*for (auto it = couple_idx_mapping.begin(); it != couple_idx_mapping.end(); it++)
+        {
+            int z = it->first.tile->getIdcentralNode();
+            int p = it->first.poi->getPoiNode();           
+
+
+            cout << "D_z_" << z << "_p_" << p << " is equal to " <<    cplex.getValue(D_var[it->second]) << endl;
+            cout << "PPOI_z_" << z << "_p_" << p << " is equal to " << cplex.getValue(PPOI_var[it->second]) << endl;
+            cout << "path is going through : ";
+            // Display the path
+            for (auto edge_it = it->first.tile->getEdgeVisibility().begin(); edge_it != it->first.tile->getEdgeVisibility().end(); edge_it++)
+            {
+                key_type k;
+                k.tile = it->first.tile;
+                k.poi = it->first.poi;
+                k.edge = (*edge_it);
+
+                size_t position = idx_mapping[k];
+                if (cplex.getValue(Delta_var[position]) > 0.5)
+                    cout << "( " << (*edge_it)->get_node_id_1() << " - " << (*edge_it)->get_node_id_2() << " ) ";
+            }
+            cout << endl;
+
+        } */
 
         resFile << "arc_to_improve" << "; " << endl;
         size_t e = 0;

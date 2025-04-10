@@ -127,6 +127,8 @@ public:
 	void createObjective();
 	void createObjectiveOnPopulation();
 	void createObjectiveOnDistance();
+	void printVisiblePPOI();
+	void printVisiblePPOIToFile(const std::string& filename1, const std::string& filename2);
 	void solveModelSmallVisibility(bool affichage, bool needExport, bool setOffPreSolve);
 	void solveModelExact(bool affichage, bool needExport, bool setOffPreSolve);
 

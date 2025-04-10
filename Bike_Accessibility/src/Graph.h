@@ -59,6 +59,7 @@ public:
 	//find existing paths
 	bool doPathexists(long int, long int);
 	bool doSecurePathExists(long int start, long int end, double lts_max, double dist_limit);
+	void printVisiblePPOI(Tiles* carreaux, double LTS_max, float distance_max);
 	void findPossibleODPairs(int );
 
 	// compute ppoi
@@ -77,8 +78,10 @@ public:
 	void compute_reachable_edges_v2(Tile* currTile, float dist_limit);
 	void compute_reachable_edges_v3(Tile* currTile, float dist_limit);
 	void compute_reachable_edges_v4(Tile* currTile, float dist_limit);
+	void compute_reachable_edges_full_visibility(Tile* currTile);
 	void initialize_tiles_visibility_set_small_visibility(Tiles* carreaux, float dist);
 	void initialize_tiles_visibility_set_exact(Tiles* carreaux, float dist);
+	void initialize_tiles_visibility_set_full(Tiles* carreaux, float dist_limit);
 	void compute_reachable_edges_h(Tile* currTile, float dist_limit, float lts_max);
 	void initialize_tiles_visibility_set_h(Tiles* carreaux, float dist, float lts_max);
 };

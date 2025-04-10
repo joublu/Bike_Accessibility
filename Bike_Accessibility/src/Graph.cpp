@@ -337,6 +337,20 @@ void Graph::compute_reachable_edges_v3(Tile* currTile, float dist_limit)
 	reset_list_of_nodes(nodes_stack_to_reset);
 }
 
+void Graph::compute_reachable_edges_full_visibility(Tile* currTile)
+{
+	for (int i = 0; i < list_of_nodes.size(); i++)
+	{
+		Node* current_node_ptr = getPtrNode(i);
+		currTile->getNodeVisibility().push_back(current_node_ptr); 
+	}
+	for (int j = 0; j < list_of_edges.size(); j++)
+	{
+		Edge* current_edge_ptr = getGivenEdge(j);
+		currTile->getEdgeVisibility().push_back(current_edge_ptr); 
+	}
+}
+
 void Graph::initialize_tiles_visibility_set_small_visibility(Tiles* carreaux, float dist_limit)
 {
 	reset_nodes();
@@ -354,6 +368,16 @@ void Graph::initialize_tiles_visibility_set_exact(Tiles* carreaux, float dist_li
 	for (int i = 0; i < nbTiles; i++)
 	{
 		this->compute_reachable_edges_v4(carreaux->getListeOfTiles()[i], dist_limit);
+	}
+}
+
+void Graph::initialize_tiles_visibility_set_full(Tiles* carreaux, float dist_limit)
+{
+	reset_nodes();
+	int nbTiles = carreaux->getNbTiles();
+	for (int i = 0; i < nbTiles; i++)
+	{
+		this->compute_reachable_edges_full_visibility(carreaux->getListeOfTiles()[i]);
 	}
 }
 
@@ -452,6 +476,7 @@ int Graph::compute_objective(Tiles* carreaux, double lts_max, float dist_limit)
 bool Graph::doSecurePathExists(long int start, long int end, double lts_max, double dist_limit)
 {
 	if (start==end)	return true;
+	reset_nodes();
 
 	std::vector<Node*> nodes_stack;
 	std::vector<Node*> nodes_stack_to_reset;
@@ -484,16 +509,16 @@ bool Graph::doSecurePathExists(long int start, long int end, double lts_max, dou
 			// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
 			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
-			if (curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) // && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
+			if (curr_dist + curr_edge->get_edge_cost_1() <= dist_limit+50000) // && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
 			{
 				// on considère l'edge ssi on peut l'utiliser
 				if ((curr_edge->get_edge_LTS() <= lts_max || curr_edge->get_is_improved()))
 				{
-					if (tmp_ptr_node->getId() == end)
-					{
-						founded = true;
-						break;
-					}
+					// if (tmp_ptr_node->getId() == end)
+					// {
+					// 	founded = true;
+					// 	break;
+					// }
 					// Mise � jour du nouveau label distance pour ce voisi
 					if (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist())
 					{
@@ -512,8 +537,36 @@ bool Graph::doSecurePathExists(long int start, long int end, double lts_max, dou
 		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
 	} while (nodes_stack.size() > 0);
 
+	if (getPtrNode(end)->getDist() <= dist_limit)
+	{
+		founded = true;
+	}
+	else
+	{
+		founded = false;
+	}
+
 	reset_list_of_nodes(nodes_stack_to_reset);
 	return founded;
+}
+
+void Graph::printVisiblePPOI(Tiles* carreaux, double LTS_max, float distance_max)
+{
+	cout << " Graph::printVisiblePPOI(Tiles* carreaux, double LTS_max, float distance_max) " << endl;
+    for (int z = 0; z < carreaux->getNbTiles(); z++)
+    {
+        Tile* curr_tile = carreaux->getListeOfTiles()[z];
+        int PPOI_visible = curr_tile->getPotentialPoi().size(); // nombre de ppoi visibles
+        for (int p = 0; p < PPOI_visible; p++)
+        {
+            POI* poi_ptr = curr_tile->getPotentialPoi()[p];
+            if (!(this->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)))
+            {
+                cout << "tile " << curr_tile->getIdcentralNode() << "; POI " << poi_ptr->getPoiNode() << endl;
+            }
+        }
+    }
+	cout << endl;
 }
 
 void Graph::findPossibleODPairs(int nbPairs){
