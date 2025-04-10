@@ -300,14 +300,16 @@ void ModelCplex_BA::generate_constraints()
     cout << "\t\t- building C7, C8  " << endl;
     for (int z = 0; z < carreaux->getNbTiles(); z++)
     {
-        
-
         Tile* tile_ptr = carreaux->getListeOfTiles()[z];
 
         long int node_delegue = carreaux->getListeOfTiles()[z]->getIdcentralNode();
         // r�cup�rer les successeur du noeud central
         std::vector<Edge*>& succ_edge_of_nz = graph->getEdgeSucc(node_delegue);
-        std::vector<Edge*> keep_succ_edges;
+        std::vector<Edge*> keep_succ_edges_of_nz;
+
+        // r�cup�rer les pr�decesseurs du noeud central
+        std::vector<Edge*>& pred_edge_of_nz = graph->getEdgePred(node_delegue);
+        std::vector<Edge*> keep_pred_edges_of_nz;
 
 
         // V�rifier que les edge retourn�s sont dans la visibilit� de z car ce sont les successeurs � l'echelle du graphe
@@ -317,7 +319,16 @@ void ModelCplex_BA::generate_constraints()
             if (find(carreaux->getListeOfTiles()[z]->getEdgeVisibility().begin(),
                 carreaux->getListeOfTiles()[z]->getEdgeVisibility().end(), *it) != carreaux->getListeOfTiles()[z]->getEdgeVisibility().end())
             {
-                keep_succ_edges.push_back(*it);
+                keep_succ_edges_of_nz.push_back(*it);
+            }
+        }
+
+        for (auto it = pred_edge_of_nz.begin(); it != pred_edge_of_nz.end(); it++)
+        {
+            if (find(carreaux->getListeOfTiles()[z]->getEdgeVisibility().begin(),
+                carreaux->getListeOfTiles()[z]->getEdgeVisibility().end(), *it) != carreaux->getListeOfTiles()[z]->getEdgeVisibility().end())
+            {
+                keep_pred_edges_of_nz.push_back(*it);
             }
         }
 
@@ -328,15 +339,19 @@ void ModelCplex_BA::generate_constraints()
             IloExpr Delta_np(env);
             IloExpr Delta_nz(env);
 
-
+            IloExpr Delta_succ_np(env);
+            IloExpr Delta_pred_nz(env);
 
             POI* poi_ptr = carreaux->getListeOfTiles()[z]->getPotentialPoi()[p];
             long int node_poi_np = poi_ptr->getPoiNode();
            
                 // r�cup�rer les predecesseurs du noeud du poi
                 std::vector<Edge*>& pred_edge_of_np = graph->getEdgePred(node_poi_np);
-                //cout << "the list of predessors"
-                std::vector<Edge*> keep_pred_edges;
+                std::vector<Edge*> keep_pred_edges_of_np;
+
+                // r�cup�rer les successeurs du noeud du poi
+                std::vector<Edge*>& succ_edge_of_np = graph->getEdgeSucc(node_poi_np);
+                std::vector<Edge*> keep_succ_edges_of_np;
 
                 //cout << "#########################################" << endl;
                 //cout << " Noeud delegue = " << node_delegue << " et poi = " << node_poi_np << " dont les predecesseurs du poi sont " << endl;
@@ -349,18 +364,26 @@ void ModelCplex_BA::generate_constraints()
                     if (find(carreaux->getListeOfTiles()[z]->getEdgeVisibility().begin(),
                         carreaux->getListeOfTiles()[z]->getEdgeVisibility().end(), *it) != carreaux->getListeOfTiles()[z]->getEdgeVisibility().end())
                     {
-                        keep_pred_edges.push_back(*it);
+                        keep_pred_edges_of_np.push_back(*it);
                         //cout << " in visibility" << endl;
                     }
-                   // cout << endl;
+                }
+
+                for (auto it = succ_edge_of_np.begin(); it != succ_edge_of_np.end(); it++)
+                {
+                    if (find(carreaux->getListeOfTiles()[z]->getEdgeVisibility().begin(),
+                        carreaux->getListeOfTiles()[z]->getEdgeVisibility().end(), *it) != carreaux->getListeOfTiles()[z]->getEdgeVisibility().end())
+                    {
+                        keep_succ_edges_of_np.push_back(*it);
+                    }
                 }
 
                 //bool does_np_exist = false;
                 //bool does_nz_exist = false;
                 //cout << "LES PREDECESEURS DE " << node_poi_np << " sont " << endl;
-                for (size_t ke = 0; ke < keep_pred_edges.size(); ke++)
+                for (size_t ke = 0; ke < keep_pred_edges_of_np.size(); ke++)
                 {
-                    Edge* edge_ptr = keep_pred_edges[ke];
+                    Edge* edge_ptr = keep_pred_edges_of_np[ke];
                     key_type k;
                     k.tile = tile_ptr;
                     k.poi = poi_ptr;
@@ -383,9 +406,9 @@ void ModelCplex_BA::generate_constraints()
                 //cout << "FIn des predecesseurs " << endl;
 
 
-                for (size_t ke = 0; ke < keep_succ_edges.size(); ke++)
+                for (size_t ke = 0; ke < keep_succ_edges_of_nz.size(); ke++)
                 {
-                    Edge* edge_ptr = keep_succ_edges[ke];
+                    Edge* edge_ptr = keep_succ_edges_of_nz[ke];
                     key_type k;
                     k.tile = tile_ptr;
                     k.poi = poi_ptr;
@@ -393,6 +416,30 @@ void ModelCplex_BA::generate_constraints()
                     size_t position = idx_mapping[k];
 
                     Delta_nz += Delta_var[position];
+                }
+
+                for (size_t ke = 0; ke < keep_succ_edges_of_np.size(); ke++)
+                {
+                    Edge* edge_ptr = keep_succ_edges_of_np[ke];
+                    key_type k;
+                    k.tile = tile_ptr;
+                    k.poi = poi_ptr;
+                    k.edge = edge_ptr;
+                    size_t position = idx_mapping[k];
+
+                    Delta_succ_np += Delta_var[position];
+                }
+
+                for (size_t ke = 0; ke < keep_pred_edges_of_nz.size(); ke++)
+                {
+                    Edge* edge_ptr = keep_pred_edges_of_nz[ke];
+                    key_type k;
+                    k.tile = tile_ptr;
+                    k.poi = poi_ptr;
+                    k.edge = edge_ptr;
+                    size_t position = idx_mapping[k];
+
+                    Delta_pred_nz += Delta_var[position];
                 }
 
                 if (tile_ptr->getIdcentralNode() != node_poi_np)
@@ -404,12 +451,24 @@ void ModelCplex_BA::generate_constraints()
                     c8.setName(nameConstraintC8.str().c_str());
                     model.add(c8);
 
+                    std::stringstream nameConstraintC8bis;
+                    IloConstraint c8bis(Delta_succ_np == 0);
+                    nameConstraintC8bis << "constraint_8_bis_z_" << tile_ptr->getIdcentralNode() << "_p_" << node_poi_np;
+                    c8bis.setName(nameConstraintC8bis.str().c_str());
+                    model.add(c8bis);
+
 
                     std::stringstream nameConstraintC7;
                     IloConstraint c7(Delta_nz == 1);
                     nameConstraintC7 << "constraint_7_z_" << tile_ptr->getIdcentralNode() << "_p_" << node_poi_np;
                     c7.setName(nameConstraintC7.str().c_str());
                     model.add(c7);
+
+                    std::stringstream nameConstraintC7bis;
+                    IloConstraint c7bis(Delta_pred_nz == 0);
+                    nameConstraintC7bis << "constraint_7_bis_z_" << tile_ptr->getIdcentralNode() << "_p_" << node_poi_np;
+                    c7bis.setName(nameConstraintC7bis.str().c_str());
+                    model.add(c7bis);
                 }
                 else
                 {
