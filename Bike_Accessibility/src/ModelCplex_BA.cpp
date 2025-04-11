@@ -510,22 +510,9 @@ void ModelCplex_BA::generate_constraints()
             // Pour chauqe noeuds j dans la visibilite de z
             for (auto it = carreaux->getListeOfTiles()[z]->getNodeVisibility().begin(); it != carreaux->getListeOfTiles()[z]->getNodeVisibility().end(); it++)
             {
-                bool is_nz_or_np = false;
-                // On ne considere pas les nz ni les np (noeuds delegues et poi)
-                if ((*it)->getId() == node_delegue)  is_nz_or_np = true;
 
                 long int curentNodej = (*it)->getId();
                 
-                for (auto it_poi = carreaux->getListeOfTiles()[z]->getPotentialPoi().begin();
-                    it_poi != carreaux->getListeOfTiles()[z]->getPotentialPoi().end(); it_poi++)
-                {
-                    if ((*it_poi)->getPoiNode() == (*it)->getId())
-                    {
-                        is_nz_or_np = true;
-                        break; // le noeud est un np
-                    }
-                }
-                //if (!is_nz_or_np)
                 {
                      // r�cup�rer les succ et pred et ne garder que les edges qui sont dans la visibilit�
                     // r�cup�rer les predecesseurs du noeud du poi
@@ -590,7 +577,7 @@ void ModelCplex_BA::generate_constraints()
                             sum_succ_j += Delta_var[position];
                             does_succ_exist = true;
                         }
-                        
+
                         if (does_pred_exist)
                         {
                             std::stringstream nameConstraintC10;
@@ -608,6 +595,9 @@ void ModelCplex_BA::generate_constraints()
                             model.add(c11);
                         }
 
+                        bool is_nz_or_np = false;
+                        if (curentNodej == tile_ptr->getIdcentralNode() || curentNodej == poi_ptr->getPoiNode()) is_nz_or_np = true;
+                         
                         if (!is_nz_or_np && (does_succ_exist || does_pred_exist))
                         {
                             std::stringstream nameConstraintC9;
