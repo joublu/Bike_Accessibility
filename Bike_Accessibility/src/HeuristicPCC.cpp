@@ -241,7 +241,7 @@ void HeuristicPCC::compute_objective()
             // cout<<"PPOI_var = "<<PPOI_var<<endl;
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
             // cout << "z p = " << curr_tile->getIdcentralNode() << " " << poi_ptr->getPoiNode() << endl;
-            if (graph->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)) // voir direction
+            if (graph->doSecurePathExistsFullVisibility(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)) // voir direction
             {
                 // cout << "path exists" << endl;
                 ppoi_barre--; // le ppoi est atteint
@@ -263,7 +263,7 @@ void HeuristicPCC::compute_objective_population()
         {
             ppoi_barre+=wz; // le ppoi est visible
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
-            if (graph->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)) // voir direction
+            if (graph->doSecurePathExistsFullVisibility(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)) // voir direction
             {
                 ppoi_barre-=wz; // le ppoi est atteint
             }

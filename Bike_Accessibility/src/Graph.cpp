@@ -464,7 +464,7 @@ int Graph::compute_objective(Tiles* carreaux, double lts_max, float dist_limit)
         {
             PPOI_var++; // le ppoi est visible
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
-            if (this->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), lts_max, dist_limit))
+            if (this->doSecurePathExistsFullVisibility(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), lts_max, dist_limit))
             {
                 PPOI_var--; // le ppoi est atteint
             }
@@ -473,7 +473,7 @@ int Graph::compute_objective(Tiles* carreaux, double lts_max, float dist_limit)
     return PPOI_var;
 }
 
-bool Graph::doSecurePathExists(long int start, long int end, double lts_max, double dist_limit)
+bool Graph::doSecurePathExistsFullVisibility(long int start, long int end, double lts_max, double dist_limit)
 {
 	if (start==end)	return true;
 	reset_nodes();
@@ -509,16 +509,16 @@ bool Graph::doSecurePathExists(long int start, long int end, double lts_max, dou
 			// cout << "looking at " << tmp_ptr_node->getId() << " succ of " << current_node_id << " dist i_j = " << curr_edge->get_edge_cost_1() << endl;
 
 			// Si la distance pour atteindre le noeud est dans la limite et si ce noeud n'était pas déjà atteint avec une plus petite distance
-			if (curr_dist + curr_edge->get_edge_cost_1() <= dist_limit+50000) // && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
+			if (curr_dist + curr_edge->get_edge_cost_1() <= dist_limit) // && (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist()))
 			{
 				// on considère l'edge ssi on peut l'utiliser
 				if ((curr_edge->get_edge_LTS() <= lts_max || curr_edge->get_is_improved()))
 				{
-					// if (tmp_ptr_node->getId() == end)
-					// {
-					// 	founded = true;
-					// 	break;
-					// }
+					if (tmp_ptr_node->getId() == end)
+					{
+						founded = true;
+						return founded;
+					}
 					// Mise � jour du nouveau label distance pour ce voisi
 					if (curr_dist + curr_edge->get_edge_cost_1() < tmp_ptr_node->getDist())
 					{
@@ -537,14 +537,14 @@ bool Graph::doSecurePathExists(long int start, long int end, double lts_max, dou
 		std::sort(nodes_stack.begin(), nodes_stack.end(), myUtils::sortbydecreasdist);
 	} while (nodes_stack.size() > 0);
 
-	if (getPtrNode(end)->getDist() <= dist_limit)
-	{
-		founded = true;
-	}
-	else
-	{
-		founded = false;
-	}
+	// if (getPtrNode(end)->getDist() <= dist_limit)
+	// {
+	// 	founded = true;
+	// }
+	// else
+	// {
+	// 	founded = false;
+	// }
 
 	reset_list_of_nodes(nodes_stack_to_reset);
 	return founded;
@@ -560,7 +560,7 @@ void Graph::printVisiblePPOI(Tiles* carreaux, double LTS_max, float distance_max
         for (int p = 0; p < PPOI_visible; p++)
         {
             POI* poi_ptr = curr_tile->getPotentialPoi()[p];
-            if (!(this->doSecurePathExists(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)))
+            if (!(this->doSecurePathExistsFullVisibility(curr_tile->getIdcentralNode(), poi_ptr->getPoiNode(), LTS_max, distance_max)))
             {
                 cout << "tile " << curr_tile->getIdcentralNode() << "; POI " << poi_ptr->getPoiNode() << endl;
             }

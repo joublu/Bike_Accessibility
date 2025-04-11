@@ -58,7 +58,7 @@ public:
 
 	//find existing paths
 	bool doPathexists(long int, long int);
-	bool doSecurePathExists(long int start, long int end, double lts_max, double dist_limit);
+	bool doSecurePathExistsFullVisibility(long int start, long int end, double lts_max, double dist_limit);
 	void printVisiblePPOI(Tiles* carreaux, double LTS_max, float distance_max);
 	void findPossibleODPairs(int );
 
